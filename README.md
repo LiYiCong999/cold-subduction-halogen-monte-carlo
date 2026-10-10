@@ -50,7 +50,8 @@ Three user-provided Python scripts were incorporated into this repository. Their
 
 1. **Author:** Yi-Cong Li. Software citation metadata is provided in [`CITATION.cff`](CITATION.cff).
 2. **Source code and input data:** The three Python scripts and their corresponding CSV datasets are available in the `scripts/` and `data/` directories.
-3. **Version and DOI:** The initial GitHub release (`v1.0.0`) is currently prepared as a draft. The repository is connected to Zenodo for automatic archiving. The version-specific DOI will be added after the release is published and archived.
-4. **License:** No explicit software or data license has been assigned. Reuse permissions should be clarified with the relevant rights holders.
+3. **Release and DOI:** The initial release (`v1.0.0`) has been archived on Zenodo. The version-specific DOI is [10.5281/zenodo.23278295](https://doi.org/10.5281/zenodo.23278295). This DOI identifies the original v1.0.0 release and does not include subsequent GitHub modifications.
+
+4. **Licenses:** The three Python scripts in [`scripts/`](scripts/) are provided under the [MIT License](scripts/LICENSE). The three input CSV datasets in [`data/`](data/) are provided under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](data/LICENSE). The original Zenodo v1.0.0 archive predates these license-file additions and displays CC BY 4.0 in its record metadata.
 
 See [`docs/GITHUB_ZENODO_GUIDE_CN.md`](docs/GITHUB_ZENODO_GUIDE_CN.md) for detailed Chinese instructions.
