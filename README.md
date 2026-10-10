@@ -22,7 +22,7 @@ python -m pip install -r requirements.txt
 
 ### Input files
 
-The study input datasets were not attached when this software package was prepared. Place the actual CSV files in `data/`, using the names shown in the table above. See [`data/README.md`](data/README.md) for expected columns and concentration units. **Without these data, the scripts cannot reproduce the published results.**
+The three input CSV datasets are included in the [`data/`](data/) directory: `release_efficiency.csv`, `bulk_data.csv`, and `halogen_data.csv`. See [`data/README.md`](data/README.md) for required columns, rock-type labels, and concentration units.
 
 ### Run (from the repository root)
 
@@ -44,13 +44,13 @@ Each script writes outputs under `results/` (git-ignored), and some scripts disp
 
 ## Provenance and modifications
 
-Three user-provided Python files were incorporated. Their numerical methods, filters, random seeds, stage ordering and plot settings were left unchanged. **Only three local Windows input paths and three output paths were changed** to portable project-relative locations; Chinese source comments, docstrings, and human-facing console/error messages in script 01 were translated to English. Scripts 02 and 03 already contained no Chinese text. The SHA-256 checksums of the original uploads and their original filenames are recorded in [`docs/SOURCE_PROVENANCE.json`](docs/SOURCE_PROVENANCE.json). These adjusted scripts passed Python static syntax compilation; scientific calculations were **not** rerun, because their input CSV datasets were not supplied.
+Three user-provided Python scripts were incorporated into this repository. Their numerical methods, filters, random seeds, stage ordering, and plotting settings were retained. Local Windows input and output paths were adapted to project-relative paths, and Chinese comments, docstrings, and console messages in script 01 were translated into English. Original filenames and SHA-256 checksums are recorded in [`docs/SOURCE_PROVENANCE.json`](docs/SOURCE_PROVENANCE.json). The adjusted scripts passed Python static syntax checks. The three input CSV datasets are now included in this repository. Full numerical execution and reproducibility of the Monte Carlo simulations have not yet been independently verified.
 
 ## Citation, release and data availability
 
-1. Complete [`CITATION.cff.template`](CITATION.cff.template) with the real code-author name(s), then save it as `CITATION.cff` **before** making a tagged GitHub Release. Do not release with placeholder names.
-2. Connect the repository to Zenodo, enable repository archiving, then create a GitHub release (for example `v1.0.0`). Zenodo normally archives each eligible release and assigns a version-specific DOI.
-3. Replace this section with the permanent repository URL, version DOI, and any separate input-data DOI once available.
-4. Decide and add a license with the actual rights holders' approval; no license is assigned in this preparation package.
+1. **Author:** Yi-Cong Li. Software citation metadata is provided in [`CITATION.cff`](CITATION.cff).
+2. **Source code and input data:** The three Python scripts and their corresponding CSV datasets are available in the `scripts/` and `data/` directories.
+3. **Version and DOI:** The initial GitHub release (`v1.0.0`) is currently prepared as a draft. The repository is connected to Zenodo for automatic archiving. The version-specific DOI will be added after the release is published and archived.
+4. **License:** No explicit software or data license has been assigned. Reuse permissions should be clarified with the relevant rights holders.
 
 See [`docs/GITHUB_ZENODO_GUIDE_CN.md`](docs/GITHUB_ZENODO_GUIDE_CN.md) for detailed Chinese instructions.
