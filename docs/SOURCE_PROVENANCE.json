@@ -1,0 +1,23 @@
+{
+  "note": "Input/output path configuration adapted for portability; script 01 comments, docstrings and human-facing messages translated from Chinese to English. Numerical algorithms unchanged.",
+  "files": [
+    {
+      "original_filename": "20260730-归一化效率计算_简化纵坐标公式_箱体内标注n_完整代码(3).py",
+      "repository_path": "scripts/01_stage_release_efficiency.py",
+      "original_sha256": "959f4500c9584f1a29cd490f3ba10134661b80f950f187f0a61c8f6cd82fb952",
+      "changes": "Input/output path settings adapted; Chinese comments, docstrings and human-facing messages translated to English; numerical logic unchanged"
+    },
+    {
+      "original_filename": "20260917_monte_carlo_halogen_dehydration_NC_纯流体成分_比值范围与箱图增强版(2).py",
+      "repository_path": "scripts/02_open_system_halogen_dehydration.py",
+      "original_sha256": "8ece8f262da53810c7d92b9bf348b8298105998e28693aab3592770672e2ab1f",
+      "changes": "Input/output path setting lines only; computational logic unmodified"
+    },
+    {
+      "original_filename": "NC_melange_MC_by_mafic_type_stylematch_v7(2).py",
+      "repository_path": "scripts/03_melange_mixing_mc.py",
+      "original_sha256": "985e9669364fe76713741f233e3a8d1136c24fd52ce68cbb21cc57dd68467a25",
+      "changes": "Input/output path setting lines only; computational logic unmodified"
+    }
+  ]
+}
