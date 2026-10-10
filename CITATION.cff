@@ -1,16 +1,15 @@
-# Replace the sample author before renaming this file to CITATION.cff.
-# A file named CITATION.cff will be parsed by GitHub/Zenodo.
 cff-version: 1.2.0
 title: "Monte Carlo models for halogen behavior during cold oceanic subduction"
 message: "Please cite the specific Zenodo version DOI associated with the release used."
 type: software
-version: 1.0.0
+version: "1.0.0"
 authors:
-  - family-names: "REPLACE_WITH_FAMILY_NAME"
-    given-names: "REPLACE_WITH_GIVEN_NAME"
+  - family-names: "Li"
+    given-names: "Yi-Cong"
+repository-code: "https://github.com/LiYiCong999/cold-subduction-halogen-monte-carlo"
 keywords:
   - cold subduction
   - halogen geochemistry
   - Monte Carlo simulation
   - oceanic crust dehydration
-  - mélange mixing
+  - melange mixing
