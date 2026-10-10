@@ -1,0 +1,581 @@
+﻿Rock_Type,F_ppm,Cl_ppm,Br_ppb,I_ppb
+metasediment,495,20,1,0.03
+metasediment,780,6,9,0.3
+metasediment,302,18,1,0.1
+forearc serpentinite,,420,2700,6200
+forearc serpentinite,,1000,8200,45000
+forearc serpentinite,,1200,8200,35000
+forearc serpentinite,,630,5100,18000
+forearc serpentinite,,2300,24000,9400
+forearc serpentinite,,1100,5700,2100
+forearc serpentinite,,1100,8400,5200
+forearc serpentinite,,990,7200,6900
+forearc serpentinite,101,612,1300,200
+forearc serpentinite,60,666,970,80
+forearc serpentinite,72,729,1100,58
+forearc serpentinite,51,785,1100,116
+forearc serpentinite,52,876,1300,110
+forearc serpentinite,102,525,600,130
+forearc serpentinite,36,856,1400,180
+forearc serpentinite,65,739,1300,140
+forearc serpentinite,96,365,790,70
+forearc serpentinite,66,488,1500,170
+forearc serpentinite,59,360,600,80
+forearc serpentinite,13,363,671,120
+Blueschist,588,17,159,169
+Blueschist,504,18,226,185
+Blueschist,387,15,111,143
+Blueschist,289,13,93,147
+Blueschist,583,10,151,150
+Blueschist,215,10,75,135
+Blueschist,560,21,124,442
+Blueschist,359,69,554,43
+Blueschist,441,26,169,18
+Blueschist,294,28,353,53
+Blueschist,342,21,238,15
+Blueschist,373,18,122,71
+Blueschist,580,19,92,10
+Blueschist,250,27,158,54
+Blueschist,309,17,55,39
+Blueschist,298,17,126,22
+Blueschist,434,29,111,125
+Blueschist,573,38,141,171
+Blueschist,537,37,125,172
+Blueschist,493,34,105,126
+Blueschist,332,29,195,36
+Blueschist,347,37,282,42
+Blueschist,254,22,123,68
+Blueschist,486,30,170,80
+Blueschist,561,33,127,182
+Blueschist,268,23,80,57
+Blueschist,361,26,142,76
+Blueschist,339,36,293,77
+Blueschist,306,25,142,101
+Blueschist,535,36,137,68
+Blueschist,578,37,94,379
+Blueschist,380,19,109,233
+Blueschist,568,37,143,182
+Blueschist,533,33,112,198
+Blueschist,389,25,114,39
+Blueschist,399,22,182,82
+Blueschist,382,33,329,62
+Blueschist,513,25,119,96
+Blueschist,370,29,120,111
+Blueschist,493,28,114,123
+Blueschist,354,33,138,115
+Blueschist,312,23,101,99
+Blueschist,335,30,99,70
+Blueschist,546,25,113,175
+Blueschist,559,40,117,150
+Blueschist,550,42,130,114
+Blueschist,469,32,123,104
+Blueschist,469,35,118,100
+Blueschist,547,39,145,134
+Blueschist,403,43,137,88
+Blueschist,551,44,128,163
+Blueschist,351,38,124,84
+Blueschist,537,40,312,102
+Blueschist,328,19,89,63
+Blueschist,394,28,113,72
+Blueschist,343,32,178,43
+Blueschist,304,32,104,87
+Blueschist,300,30,127,80
+Blueschist,428,34,115,131
+Blueschist,399,39,156,103
+Blueschist,356,36,138,98
+Blueschist,321,35,106,65
+Blueschist,297,36,111,96
+Blueschist,386,34,140,88
+Blueschist,498,34,112,123
+Blueschist,316,35,109,106
+Blueschist,420,33,129,106
+Blueschist,380,35,112,107
+Blueschist,397,34,103,123
+Blueschist,411,25,110,104
+Blueschist,484,21,140,128
+Blueschist,478,23,111,104
+Blueschist,415,26,141,94
+Blueschist,322,19,102,38
+Blueschist,356,21,128,80
+Blueschist,217,20,106,87
+Blueschist,439,21,164,95
+Blueschist,334,18,100,82
+Blueschist,330,23,137,127
+Blueschist,427,20,192,153
+Blueschist,332,15,109,100
+Blueschist,373,24,88,86
+Blueschist,256,24,96,50
+Blueschist,474,24,113,131
+Blueschist,303,21,95,65
+Blueschist,213,27,99,57
+Blueschist,236,28,129,51
+Blueschist,530,42,163,88
+Blueschist,498,33,120,225
+Blueschist,330,29,123,27
+Blueschist,323,20,85,88
+Blueschist,320,18,108,47
+Blueschist,278,23,105,52
+Blueschist,394,28,155,64
+Blueschist,355,21,85,38
+Blueschist,412,27,112,160
+Blueschist,365,29,109,38
+Blueschist,318,19,129,34
+Blueschist,394,25,103,94
+Blueschist,87,23,61,65
+Blueschist,75,21,69,66
+Blueschist,149,30,98,63
+Blueschist,79,15,103,81
+Blueschist,393,28,94,78
+Blueschist,406,28,83,117
+Blueschist,380,28,81,83
+Blueschist,512,29,141,133
+Blueschist,529,41,126,121
+Blueschist,395,14,115,125
+Blueschist,281,28,131,94
+Blueschist,350,27,118,107
+Blueschist,437,25,114,120
+Blueschist,294,16,85,117
+Blueschist,400,23,98,46
+Blueschist,245,19,109,43
+Blueschist,300,22,87,61
+Blueschist,369,16,111,135
+Blueschist,399,35,409,202
+Blueschist,400,51,116,33
+Blueschist,400,52,117,38
+Blueschist,374,25,104,37
+Blueschist,424,31,185,92
+Blueschist,366,53,378,128
+Blueschist,419,22,108,113
+Blueschist,353,39,323,140
+Blueschist,410,23,99,128
+Blueschist,482,37,141,64
+Blueschist,379,20,127,120
+Blueschist,329,24,83,34
+Blueschist,347,22,101,36
+Blueschist,465,30,84,122
+Blueschist,383,24,99,128
+Blueschist,464,20,108,122
+Blueschist,429,22,101,115
+Blueschist,464,29,91,104
+Blueschist,384,25,118,26
+Blueschist,350,29,95,24
+Blueschist,303,24,101,31
+Blueschist,319,22,108,34
+Blueschist,456,35,140,111
+Blueschist,317,24,121,40
+Blueschist,312,27,113,38
+Blueschist,445,32,136,99
+Blueschist,458,33,130,95
+Blueschist,487,35,307,247
+Blueschist,520,34,309,268
+Blueschist,497,23,117,127
+Blueschist,239,18,94,81
+Blueschist,323,37,308,202
+Blueschist,368,36,311,196
+Blueschist,447,40,120,45
+Blueschist,400,17,102,95
+Blueschist,371,46,115,28
+Blueschist,363,26,138,33
+Blueschist,435,25,102,91
+Blueschist,392,23,114,36
+Blueschist,375,19,109,114
+Blueschist,343,22,130,30
+Blueschist,447,30,200,155
+Blueschist,381,28,99,44
+Blueschist,373,29,90,64
+Blueschist,395,33,83,56
+Blueschist,333,24,201,43
+Blueschist,425,30,86,59
+Blueschist,261,23,185,61
+Blueschist,333,31,96,25
+Blueschist,290,25,77,39
+Blueschist,306,29,76,28
+Blueschist,265,24,68,42
+Blueschist,313,34,104,32
+Blueschist,300,39,110,49
+Blueschist,409,34,81,27
+Blueschist,233,16,101,79
+Blueschist,242,20,98,91
+Blueschist,264,21,74,80
+Blueschist,332,23,77,70
+Blueschist,332,23,127,50
+Blueschist,377,22,105,43
+Blueschist,351,27,215,32
+Blueschist,272,29,105,50
+Blueschist,254,21,93,64
+Blueschist,386,29,250,35
+Blueschist,374,30,125,76
+Blueschist,350,33,120,37
+Blueschist,384,29,118,27
+Blueschist,432,35,117,18
+Blueschist,430,32,118,21
+Blueschist,401,37,230,52
+Blueschist,365,28,134,91
+Blueschist,376,22,123,119
+Blueschist,353,33,114,38
+Blueschist,317,32,114,37
+Blueschist,341,28,126,55
+Blueschist,449,39,120,122
+Blueschist,407,38,128,82
+Blueschist,386,26,145,60
+Blueschist,346,22,104,63
+Blueschist,385,25,119,41
+Blueschist,361,35,123,52
+Blueschist,386,26,141,58
+Blueschist,379,29,120,31
+Blueschist,385,24,99,28
+HP eclogite,197,17,121,6
+HP eclogite,192,14,77,6
+HP eclogite,156,29,152,14
+HP eclogite,166,13,59,41
+HP eclogite,154,25,37,48
+HP eclogite,97,28,43,44
+HP eclogite,162,16,64,54
+HP eclogite,189,16,47,40
+HP eclogite,113,12,123,75
+HP eclogite,103,8,74,58
+HP eclogite,249,13,115,52
+HP eclogite,176,19,174,64
+HP eclogite,193,17,175,47
+HP eclogite,180,14,149,65
+HP eclogite,173,17,143,62
+HP eclogite,238,24,134,63
+HP eclogite,183,25,149,67
+HP eclogite,193,18,150,66
+HP eclogite,168,13,144,74
+HP eclogite,228,13,152,63
+HP eclogite,230,16,168,61
+HP eclogite,253,17,173,17
+HP eclogite,140,29,39,40
+HP eclogite,178,19,84,47
+HP eclogite,145,24,37,48
+HP eclogite,238,34,102,9
+HP eclogite,357,31,174,41
+HP eclogite,98,10,69,30
+HP eclogite,96,19,54,18
+HP eclogite,200,36,77,48
+HP eclogite,159,36,95,49
+HP eclogite,433,30,102,6
+HP eclogite,363,29,99,9
+HP eclogite,353,29,105,28
+HP eclogite,393,28,101,7
+HP eclogite,459,28,102,18
+HP eclogite,406,29,101,7
+HP eclogite,463,29,102,7
+HP eclogite,389,30,93,6
+HP eclogite,372,29,90,36
+HP eclogite,384,28,102,7
+HP eclogite,377,29,105,7
+HP eclogite,412,31,102,7
+HP eclogite,397,28,103,6
+HP eclogite,416,28,102,6
+HP eclogite,451,29,102,7
+HP eclogite,480,28,97,6
+HP eclogite,479,28,101,7
+HP eclogite,353,29,87,33
+HP eclogite,314,27,97,5
+HP eclogite,383,21,132,16
+HP eclogite,353,21,131,51
+HP eclogite,344,23,164,32
+HP eclogite,215,13,108,8
+HP eclogite,191,15,108,13
+HP eclogite,254,25,112,3
+HP eclogite,319,35,121,28
+HP eclogite,192,41,45,42
+HP eclogite,364,39,126,3
+HP eclogite,512,32,125,20
+HP eclogite,246,44,77,48
+HP eclogite,210,43,72,45
+HP eclogite,211,49,97,51
+HP eclogite,239,35,116,37
+HP eclogite,143,21,84,50
+HP eclogite,191,32,104,33
+HP eclogite,212,39,77,48
+HP eclogite,177,36,128,46
+HP eclogite,165,42,168,64
+HP eclogite,151,11,93,48
+HP eclogite,254,40,128,42
+HP eclogite,356,43,118,3
+HP eclogite,273,43,118,75
+HP eclogite,64,18,94,42
+HP eclogite,255,22,83,7
+HP eclogite,125,8,47,42
+HP eclogite,235,40,114,41
+HP eclogite,329,24,113,29
+HP eclogite,309,27,68,8
+HP eclogite,370,29,104,3
+HP eclogite,374,34,140,8
+HP eclogite,344,25,106,9
+HP eclogite,271,43,98,3
+HP eclogite,292,34,104,18
+HP eclogite,306,24,89,37
+HP eclogite,280,21,80,27
+HP eclogite,268,40,116,28
+HP eclogite,280,54,129,54
+HP eclogite,286,51,130,52
+HP eclogite,183,30,127,54
+HP eclogite,202,30,68,33
+HP eclogite,330,21,104,45
+HP eclogite,469,20,104,3
+HP eclogite,247,31,84,18
+HP eclogite,279,18,89,26
+HP eclogite,425,27,86,4
+HP eclogite,442,35,63,7
+HP eclogite,481,44,63,7
+HP eclogite,392,48,103,3
+HP eclogite,440,33,104,3
+HP eclogite,447,46,138,3
+HP eclogite,411,35,29,3
+HP eclogite,447,57,138,32
+HP eclogite,371,69,161,53
+HP eclogite,410,44,85,21
+HP eclogite,413,35,33,3
+HP eclogite,392,48,129,8
+HP eclogite,380,44,96,3
+HP eclogite,89,19,40,44
+HP eclogite,89,20,50,53
+HP eclogite,88,18,32,44
+HP eclogite,333,34,142,63
+HP eclogite,156,25,139,44
+HP eclogite,212,29,100,69
+HP eclogite,187,30,103,8
+HP eclogite,177,29,66,35
+HP eclogite,170,31,103,36
+HP eclogite,182,29,104,31
+HP eclogite,385,31,134,19
+HP eclogite,147,29,73,44
+HP eclogite,123,32,101,44
+HP eclogite,123,34,72,44
+HP eclogite,119,26,133,18
+HP eclogite,131,35,103,30
+HP eclogite,135,34,104,47
+HP eclogite,391,43,120,8
+HP eclogite,383,45,130,8
+HP eclogite,318,58,116,62
+HP eclogite,449,37,77,3
+HP eclogite,142,11,60,61
+HP eclogite,299,28,137,55
+HP eclogite,271,32,140,34
+HP eclogite,451,33,96,46
+HP eclogite,82,15,17,7
+HP eclogite,211,9,25,2
+HP eclogite,211,9,25,2
+HP eclogite,213,80,172,42
+HP eclogite,151,9,74,45
+HP eclogite,293,29,139,55
+HP eclogite,169,34,75,3
+HP eclogite,139,33,79,16
+HP eclogite,99,10,83,35
+HP eclogite,101,23,105,13
+HP eclogite,145,16,70,62
+HP eclogite,116,22,102,12
+HP eclogite,272,41,147,66
+HP eclogite,293,29,146,68
+HP eclogite,103,22,104,38
+HP eclogite,296,27,137,70
+HP eclogite,100,24,76,8
+HP eclogite,353,46,151,67
+HP eclogite,137,11,132,43
+HP eclogite,106,21,79,12
+HP eclogite,116,15,114,14
+HP eclogite,340,30,119,5
+HP eclogite,147,5,43,60
+HP eclogite,152,9,48,56
+HP eclogite,157,14,70,55
+HP eclogite,118,7,47,37
+HP eclogite,120,14,194,59
+HP eclogite,113,7,34,66
+HP eclogite,116,4,48,60
+HP eclogite,120,14,194,59
+HP eclogite,113,7,34,66
+HP eclogite,147,5,43,60
+HP eclogite,116,4,48,60
+HP eclogite,152,9,48,56
+HP eclogite,157,14,70,55
+HP eclogite,118,7,47,37
+HP eclogite,137,7,42,59
+HP eclogite,173,23,42,60
+HP eclogite,158,22,45,65
+HP eclogite,153,22,46,62
+HP eclogite,165,33,126,54
+HP eclogite,161,23,44,62
+HP eclogite,171,22,48,60
+HP eclogite,147,24,38,57
+HP eclogite,159,22,42,60
+HP eclogite,166,22,72,56
+HP eclogite,193,45,124,56
+HP eclogite,193,39,85,57
+HP eclogite,299,28,53,36
+HP eclogite,282,31,59,46
+HP eclogite,168,28,45,51
+HP eclogite,204,24,71,47
+HP eclogite,210,38,122,3
+HP eclogite,297,37,72,3
+HP eclogite,339,24,61,3
+HP eclogite,230,44,117,3
+HP eclogite,244,19,28,8
+HP eclogite,277,35,145,45
+HP eclogite,344,36,173,5
+HP eclogite,238,45,136,15
+HP eclogite,269,30,40,2
+HP eclogite,283,17,87,41
+HP eclogite,170,29,96,13
+HP eclogite,152,11,52,14
+HP eclogite,183,11,39,15
+HP eclogite,161,19,34,91
+HP eclogite,166,15,69,18
+HP eclogite,165,20,72,11
+HP eclogite,156,14,86,16
+HP eclogite,162,23,52,17
+HP eclogite,147,29,47,10
+HP eclogite,183,22,78,3
+HP eclogite,153,20,61,16
+HP eclogite,129,28,43,30
+HP eclogite,136,14,85,46
+HP eclogite,369,24,89,3
+HP eclogite,179,15,142,29
+HP eclogite,211,31,50,33
+HP eclogite,324,32,23,3
+HP eclogite,227,51,85,38
+HP eclogite,275,29,52,20
+HP eclogite,268,33,51,4
+HP eclogite,78,13,56,41
+HP eclogite,257,29,113,71
+HP eclogite,267,36,41,31
+HP eclogite,116,17,68,47
+HP eclogite,178,25,94,49
+HP eclogite,158,10,93,52
+HP eclogite,166,14,85,53
+HP eclogite,178,35,109,41
+HP eclogite,132,20,114,77
+HP eclogite,107,20,81,89
+HP eclogite,145,29,72,68
+HP eclogite,120,36,95,59
+HP eclogite,160,31,73,56
+HP eclogite,69,25,70,23
+HP eclogite,69,37,93,24
+HP eclogite,152,33,78,17
+HP eclogite,202,61,156,47
+HP eclogite,188,38,160,54
+HP eclogite,174,56,153,46
+HP eclogite,220,42,160,47
+HP eclogite,217,59,153,49
+HP eclogite,352,44,124,31
+HP eclogite,183,40,119,54
+HP eclogite,113,35,130,53
+HP eclogite,231,55,161,51
+HP eclogite,193,40,152,56
+HP eclogite,63,26,101,57
+HP eclogite,168,10,47,52
+HP eclogite,60,20,45,105
+HP eclogite,76,10,65,87
+HP eclogite,62,17,64,44
+HP eclogite,157,15,61,87
+HP eclogite,57,14,32,45
+HP eclogite,57,7,59,29
+HP eclogite,240,22,117,3
+HP eclogite,265,25,52,4
+HP eclogite,213,29,73,16
+HP eclogite,203,30,88,16
+HP eclogite,199,26,78,17
+HP eclogite,106,11,85,64
+HP eclogite,101,9,114,63
+HP eclogite,393,25,107,17
+HP eclogite,205,24,67,25
+HP eclogite,342,29,74,27
+HP eclogite,100,15,73,28
+HP eclogite,101,8,67,90
+HP eclogite,157,11,53,87
+HP eclogite,100,9,61,41
+HP eclogite,105,9,62,59
+HP eclogite,370,44,91,15
+HP eclogite,475,44,90,29
+HP eclogite,475,45,89,30
+HP eclogite,467,44,90,31
+HP eclogite,305,37,53,6
+HP eclogite,223,31,54,6
+HP eclogite,349,32,57,6
+HP eclogite,186,23,35,14
+HP eclogite,449,44,89,3
+HP eclogite,438,45,85,3
+HP eclogite,201,23,65,38
+HP eclogite,200,23,63,42
+HP eclogite,177,23,43,15
+HP eclogite,154,24,41,15
+HP eclogite,167,24,56,50
+HP eclogite,98,19,45,33
+HP eclogite,312,38,94,5
+HP eclogite,185,43,123,55
+HP eclogite,292,40,146,45
+HP eclogite,306,74,188,31
+UHP eclogite,380,56,31,18
+UHP eclogite,245,49,31,70
+UHP eclogite,127,7,29,6
+UHP eclogite,172,56,7,70
+UHP eclogite,139,54,31,73
+UHP eclogite,182,35,5,45
+UHP eclogite,240,37,6,43
+UHP eclogite,171,51,5,53
+UHP eclogite,204,55,28,63
+UHP eclogite,211,53,29,52
+UHP eclogite,181,54,30,73
+UHP eclogite,134,55,28,60
+UHP eclogite,290,31,29,59
+UHP eclogite,400,36,29,52
+UHP eclogite,242,18,29,48
+UHP eclogite,141,61,31,64
+UHP eclogite,100,42,7,10
+UHP eclogite,135,60,6,62
+UHP eclogite,150,44,6,53
+UHP eclogite,200,16,31,61
+UHP eclogite,220,40,6,49
+UHP eclogite,130,80,31,64
+UHP eclogite,110,70,29,66
+UHP eclogite,360,50,10,24
+UHP eclogite,215,27,33,60
+UHP eclogite,47,35,8,71
+UHP eclogite,141,47,31,83
+UHP eclogite,97,38,30,65
+UHP eclogite,101,30,31,65
+UHP eclogite,241,37,7,17
+UHP eclogite,123,48,10,81
+UHP eclogite,215,48,10,81
+UHP eclogite,129,27,7,4
+UHP eclogite,195,42,6,3
+UHP eclogite,181,43,10,81
+UHP eclogite,148,36,10,81
+UHP eclogite,132,32,12,64
+UHP eclogite,123,38,14,81
+UHP eclogite,148,13,5,4
+UHP eclogite,32,0,33,18
+UHP eclogite,37,40,35,61
+UHP eclogite,230,57,8,60
+UHP eclogite,176,51,10,81
+UHP eclogite,150,18,8,1
+UHP eclogite,169,8,28,0
+UHP eclogite,90,23,6,13
+UHP eclogite,203,9,4,0
+UHP eclogite,242,21,8,1
+UHP eclogite,444,23,5,0
+UHP eclogite,195,3,6,1
+UHP eclogite,280,27,33,72
+UHP eclogite,63,6,34,78
+UHP eclogite,29,8,44,74
+UHP eclogite,10,9,40,65
+UHP eclogite,21,7,33,64
+UHP eclogite,31,9,44,64
+UHP eclogite,55,28,30,2
+UHP eclogite,94,28,30,3
+UHP eclogite,135,37,29,9
+UHP eclogite,231,28,34,78
+UHP eclogite,192,42,31,80
+UHP eclogite,228,38,7,62
+UHP eclogite,168,44,33,82
+UHP eclogite,225,34,30,68
+UHP eclogite,208,34,31,68
+UHP eclogite,40,20,12,63
+UHP eclogite,32,19,13,62
+UHP eclogite,35,20,12,64
+UHP eclogite,31,17,13,63
+UHP eclogite,40,20,31,66
+UHP eclogite,38,25,12,64
