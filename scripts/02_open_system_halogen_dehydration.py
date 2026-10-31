@@ -69,10 +69,10 @@ import matplotlib.pyplot as plt
 # =============================================================================
 
 # Modify this path for your computer.
-INPUT_CSV = "data/bulk_data.csv"
+INPUT_CSV = Path(__file__).resolve().parents[1] / "data" / "bulk_data.csv"
 
 # Relative path: output folder will be created under the current working directory.
-OUTPUT_DIR = "results/MC_halogen_dehydration_NC"
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "MC_halogen_dehydration_NC_two_row_four_col"
 
 # Main Monte Carlo size.
 N_SIM = 100_000
@@ -1846,11 +1846,11 @@ def _clean_log_arrays(x: np.ndarray, y: np.ndarray, xlim, ylim):
 
 
 def _kde_levels_on_log_grid(ax, x, y, base_color, xlim, ylim, rng):
-    """20260805-style KDE of log10 ratios; contour density as % of peak."""
+    """Display a stage-colored filled 2-D KDE ABOVE the square scatter layer."""
     if len(x) < 6:
         return
-    from matplotlib.colors import to_rgba
     from scipy.stats import gaussian_kde
+    from matplotlib.colors import to_rgb
     if len(x) > FLUID_KDE_MAX_POINTS:
         indices = rng.choice(len(x), size=FLUID_KDE_MAX_POINTS, replace=False)
         x, y = x[indices], y[indices]
@@ -1868,16 +1868,19 @@ def _kde_levels_on_log_grid(ax, x, y, base_color, xlim, ylim, rng):
     peak = float(np.max(z))
     if not np.isfinite(peak) or peak <= 0:
         return
-    # Pale -> intense, same 20,40,60,80,100% fractions as second code.
-    cutoff = np.array([.20, .40, .60, .80, 1.0]) * peak
-    color = to_rgba(base_color)
-    shades = [(*color[:3], alpha) for alpha in (.20, .40, .60, .80)]
-    if np.min(z) < cutoff[0]:
-        ax.contourf(10**X, 10**Y, z, levels=cutoff,
-                    colors=shades, antialiased=True, zorder=2)
-        ax.contour(10**X, 10**Y, z, levels=cutoff[:-1],
-                   colors=[(*color[:3], .65)], linewidths=.42,
-                   linestyles="dotted", zorder=3)
+    rgb = np.array(to_rgb(base_color))
+    # Pale peripheral KDE shades through a saturated central core.
+    # The KDE fill is semi-transparent so underlying points remain visible.
+    # Levels cover the actual KDE peak; no value above 100% is omitted.
+    levels = np.array([.12, .28, .46, .66, .83, 1.001]) * peak
+    mixes = (.22, .40, .59, .78, .98)
+    shades = [tuple((1 - t) * np.ones(3) + t * rgb) for t in mixes]
+    if np.min(z) < levels[0]:
+        ax.contourf(10**X, 10**Y, z, levels=levels,
+                    colors=shades, alpha=.68, antialiased=True, zorder=5)
+        ax.contour(10**X, 10**Y, z, levels=levels[:-1],
+                   colors=[tuple(rgb*.72)], linewidths=.55,
+                   linestyles="solid", zorder=6)
 
 
 def _log_marginal(ax, values, limits, color, horizontal=False):
@@ -1947,99 +1950,362 @@ def _expand_log_bounds(reference, values):
 
 
 def plot_six_panel_released_fluids(good: pd.DataFrame, outdir: Path):
-    """3 x 2 reference-style layout for ORIGINAL released-fluid ratios.
+    """3 x 2 KDE and uniform-color square-point plots (no marginal axes).
 
-    Rows: AOC->BS, BS->HP, HP->UHP.
-    Columns: F/Cl vs I/Cl and Br/Cl vs I/Cl.
-    Top/right axes: marginal histogram and KDE of the same plotted paths.
-    No DMM endmember, mantle fractions, mixed fluids, or observational overlays.
+    The plotting data require three elements jointly showing net loss within
+    the same Monte Carlo realization. All ratios are mass ratios.
     """
     from matplotlib.gridspec import GridSpec
-    from matplotlib.colors import LinearSegmentedColormap
     from matplotlib.ticker import LogLocator, LogFormatterMathtext
+    from matplotlib.colors import LinearSegmentedColormap
 
     panels, diagnostic = build_released_fluid_plot_ratios(good, outdir)
-    # Keep a common x scale for the six panels to preserve comparability.
-    pooled_x = [panel["I/Cl"].to_numpy(dtype=float)
-                for stage in panels.values() for panel in stage.values()]
-    xlim = _expand_log_bounds(FLUID_PLOT_XLIM,
-                              np.concatenate(pooled_x) if pooled_x else np.array([]))
-    with plt.rc_context({"font.family": "Times New Roman", "font.size": 9,
+    rng = np.random.default_rng(20260920)
+    with plt.rc_context({"font.family": "Times New Roman", "font.size": 10,
                          "axes.linewidth": .8, "pdf.fonttype": 42,
                          "ps.fonttype": 42, "svg.fonttype": "none"}):
-        fig = plt.figure(figsize=(11.1, 15.1), facecolor="white")
-        outer = GridSpec(3, 2, figure=fig, left=.078, right=.965,
-                         bottom=.049, top=.984, wspace=.23, hspace=.32)
-        rng = np.random.default_rng(20260920)
+        fig = plt.figure(figsize=(10.9, 13.3), facecolor="white")
+        gs = GridSpec(3, 2, figure=fig, left=.095, right=.972,
+                      bottom=.062, top=.977, wspace=.27, hspace=.31)
         for row, skey in enumerate(STAGE_PAIRS):
             rgb = STAGE_COLORS[skey]
-            for col, (yname, ylim_ref) in enumerate((("F/Cl", FLUID_PLOT_FYLIM),
-                                                     ("Br/Cl", FLUID_PLOT_BRYLIM))):
+            for col, (yname, ylim) in enumerate((("F/Cl", FLUID_PLOT_FYLIM),
+                                                  ("Br/Cl", FLUID_PLOT_BRYLIM))):
+                ax = fig.add_subplot(gs[row, col])
                 panel = panels[skey][yname]
-                ylim = _expand_log_bounds(ylim_ref, panel[yname].to_numpy(dtype=float))
-                inner = outer[row, col].subgridspec(
-                    2, 2, width_ratios=(1, .120), height_ratios=(.118, 1),
-                    hspace=.014, wspace=.017)
-                ax = fig.add_subplot(inner[1, 0])
-                top = fig.add_subplot(inner[0, 0], sharex=ax)
-                right = fig.add_subplot(inner[1, 1], sharey=ax)
-                corner = fig.add_subplot(inner[0, 1])
-                corner.axis("off")
+                xlim = FLUID_PLOT_XLIM
                 ax.set(xscale="log", yscale="log", xlim=xlim,
                        ylim=ylim, xlabel="I/Cl", ylabel=yname)
-                ax.tick_params(which="major", length=4.5, width=.75,
-                               direction="in", labelsize=9)
-                ax.tick_params(which="minor", length=2.5, width=.65,
-                               direction="in")
                 ax.xaxis.set_major_locator(LogLocator(base=10))
                 ax.yaxis.set_major_locator(LogLocator(base=10))
                 ax.xaxis.set_major_formatter(LogFormatterMathtext())
                 ax.yaxis.set_major_formatter(LogFormatterMathtext())
-                ax.text(.5, .977, f"Released fluid ({row+1})",
-                        transform=ax.transAxes, va="top", ha="center",
-                        fontsize=10.8, zorder=11)
-                ax.text(.032, .968, "ABCDEF"[row*2+col],
-                        transform=ax.transAxes, va="top", ha="left",
-                        fontsize=12, fontweight="bold", zorder=11)
-                ax.text(.50, .905, STAGE_LABELS[skey],
-                        transform=ax.transAxes, va="top", ha="center",
-                        fontsize=8, color="#555555", zorder=11)
+                ax.tick_params(which="major", length=4.5, width=.75,
+                               direction="in")
+                ax.tick_params(which="minor", length=2.5, width=.65,
+                               direction="in")
+                ax.text(.025, .97, "ABCDEF"[row * 2 + col],
+                        transform=ax.transAxes, fontsize=13,
+                        fontweight="bold", va="top", zorder=12)
+                ax.text(.52, .973, STAGE_LABELS[skey],
+                        transform=ax.transAxes, ha="center", va="top",
+                        fontsize=10, zorder=12)
                 x, y, n_display = _clean_log_arrays(
                     panel["I/Cl"].to_numpy(dtype=float),
                     panel[yname].to_numpy(dtype=float), xlim, ylim)
-                top.set_xscale("log")
-                right.set_yscale("log")
-                if len(x):
+                if n_display:
+                    # Draw stage-colored square points on the bottom layer.
+                    # Semi-transparent stage-colored KDE fills are drawn above them.
+                    ax.scatter(x, y, marker="s", s=5.0, color=rgb,
+                               alpha=.58, linewidths=0, zorder=1,
+                               rasterized=True)
                     _kde_levels_on_log_grid(ax, x, y, rgb, xlim, ylim, rng)
-                    _log_marginal(top, x, xlim, rgb)
-                    _log_marginal(right, y, ylim, rgb, horizontal=True)
                 else:
-                    ax.text(.50, .50, "No jointly released F/Cl/I or Br/Cl/I data",
+                    ax.text(.5, .5, "No jointly net-loss realizations",
                             transform=ax.transAxes, ha="center", va="center",
-                            fontsize=7.5, color="#555555", wrap=True)
-                top.set_xlim(xlim)
-                right.set_ylim(ylim)
-                top.tick_params(axis="x", bottom=False, labelbottom=False)
-                right.tick_params(axis="y", left=False, labelleft=False)
+                            fontsize=9)
                 if col == 0:
-                    inset = ax.inset_axes([.035, .045, .46, .022], zorder=12)
+                    inset = ax.inset_axes([.06, .062, .48, .022], zorder=12)
                     inset.imshow(np.linspace(0, 1, 256)[None, :], aspect="auto",
                                  cmap=LinearSegmentedColormap.from_list(
-                                     "density_"+skey, ["#FFFFFF", rgb]))
+                                     "density_" + skey, ["#FFFFFF", rgb]))
                     inset.set_xticks([0, 51, 102, 153, 204, 255],
                                      labels=["0", "20%", "40%", "60%", "80%", "100%"],
-                                     fontsize=5.1)
+                                     fontsize=5.5)
                     inset.set_yticks([])
-                    inset.set_title("Density (fraction of max)", fontsize=5.5, pad=0)
+                    inset.set_title("KDE density (relative to peak)",
+                                    fontsize=6, pad=1)
                     inset.tick_params(length=0, pad=0)
                 print(f"{skey}, {yname}: {len(panel):,} jointly net-loss fluid paths; "
-                      f"{n_display:,} displayed")
+                      f"{n_display:,} within plot limits")
         for extension in ("svg", "pdf"):
             fig.savefig(outdir / f"Fig_fluid_composition_six_panels.{extension}",
                         bbox_inches="tight")
         fig.savefig(outdir / "Fig_fluid_composition_six_panels.jpg",
                     bbox_inches="tight", dpi=PLOT_DPI)
         plt.close(fig)
+    return diagnostic
+
+
+def plot_released_fluid_ratio_histograms(good: pd.DataFrame, outdir: Path):
+    """Three overlaid histograms (F/Cl, Br/Cl, I/Cl), one axis per ratio.
+
+    Each panel overlays all three metamorphic stages with a common set of
+    log10-spaced bin edges. Histogram alpha=0.30, matching-color KDE lines
+    alpha=1.0. KDE curves are scaled to expected counts per logarithmic bin.
+    Pairwise joint-net-loss selections remain unchanged from the original.
+    """
+    from scipy.stats import gaussian_kde
+    from matplotlib.ticker import LogLocator, LogFormatterMathtext
+
+    groups = (("F", "Cl", FLUID_PLOT_FYLIM),
+              ("Br", "Cl", FLUID_PLOT_BRYLIM),
+              ("I", "Cl", FLUID_PLOT_XLIM))
+    stage_names = ("Blueschists", "HP eclogites", "UHP eclogites")
+    rng = np.random.default_rng(20260921)
+    with plt.rc_context({"font.family": "Times New Roman", "font.size": 11,
+                         "axes.linewidth": .85, "pdf.fonttype": 42,
+                         "ps.fonttype": 42, "svg.fonttype": "none"}):
+        fig, axes = plt.subplots(3, 1, figsize=(9.6, 10.6),
+                                 gridspec_kw={"hspace": .34}, facecolor="white")
+        fig.subplots_adjust(left=.115, right=.975, bottom=.075, top=.975)
+        for idx, (ax, (num, den, limits)) in enumerate(zip(axes, groups)):
+            edges = np.logspace(np.log10(limits[0]), np.log10(limits[1]),
+                                FLUID_HIST_BINS + 1)
+            log_bin_width = np.diff(np.log10(edges))[0]
+            smooth_log = np.linspace(np.log10(limits[0]),
+                                     np.log10(limits[1]), 350)
+            for stage_idx, skey in enumerate(STAGE_PAIRS):
+                colname = (f"{skey}_{num}_{den}_mass_ratio_"
+                           "conditional_joint_net_loss")
+                values = pd.to_numeric(good[colname], errors="coerce").to_numpy(float)
+                values = values[np.isfinite(values) & (values > 0)]
+                display = values[(values >= limits[0]) & (values <= limits[1])]
+                color = STAGE_COLORS[skey]
+                label = f"{stage_names[stage_idx]} (n={len(display):,})"
+                # Three stage histograms occupy the SAME bins, drawn transparently.
+                ax.hist(display, bins=edges, histtype="bar", color=color,
+                        alpha=.30, linewidth=0, label=label, zorder=2)
+                if len(display) >= 6 and np.std(np.log10(display)) > 1e-10:
+                    sampled = (rng.choice(display, size=FLUID_KDE_MAX_POINTS,
+                                          replace=False)
+                               if len(display) > FLUID_KDE_MAX_POINTS else display)
+                    try:
+                        kde = gaussian_kde(np.log10(sampled))
+                        curve = kde(smooth_log) * len(display) * log_bin_width
+                        ax.plot(10**smooth_log, curve, color=color,
+                                lw=1.9, alpha=1.0, zorder=5)
+                    except (ValueError, np.linalg.LinAlgError):
+                        pass
+            ax.set_xscale("log")
+            ax.set_xlim(*limits)
+            ax.set_ylim(bottom=0)
+            ax.xaxis.set_major_locator(LogLocator(base=10))
+            ax.xaxis.set_major_formatter(LogFormatterMathtext())
+            ax.tick_params(which="both", direction="in", labelsize=10)
+            ax.set_xlabel(f"{num}/{den} (mass ratio)", fontsize=11)
+            ax.set_ylabel("Count", fontsize=11)
+            ax.text(.015, .96, "ABC"[idx], transform=ax.transAxes,
+                    ha="left", va="top", fontsize=14, fontweight="bold")
+            ax.legend(loc="upper right", frameon=False, fontsize=9)
+        for extension in ("svg", "pdf"):
+            fig.savefig(outdir / f"Fig_fluid_ratio_histograms_three_groups.{extension}",
+                        bbox_inches="tight")
+        fig.savefig(outdir / "Fig_fluid_ratio_histograms_three_groups.jpg",
+                    bbox_inches="tight", dpi=PLOT_DPI)
+        plt.close(fig)
+
+
+def plot_combined_released_fluid_figure(good: pd.DataFrame, outdir: Path):
+    """Combine released-fluid ratio visualizations into one 2 x 4 figure.
+
+    Top row: three F/Cl–I/Cl panels for Blueschists, HP eclogites and
+    UHP eclogites, plus one combined F/Cl histogram.
+    Bottom row: three Br/Cl–I/Cl panels for Blueschists, HP eclogites and
+    UHP eclogites, plus one combined Br/Cl histogram.
+
+    The first six panels keep the same three-element joint-net-loss filter as
+    the previous 2-D released-fluid plots. The histogram panels keep the same
+    pairwise joint-net-loss filter as the previous standalone histograms.
+    Histogram bin width is reduced to one tenth of the previous width by using
+    ten times more logarithmic bins across the same x-range.
+    """
+    from scipy.stats import gaussian_kde
+    from matplotlib.gridspec import GridSpec
+    from matplotlib.ticker import LogLocator, LogFormatterMathtext
+
+    panels, diagnostic = build_released_fluid_plot_ratios(good, outdir)
+    stage_order = list(STAGE_PAIRS.keys())
+    stage_titles = ["Blueschists", "HP eclogites", "UHP eclogites"]
+    letters = list("ABCDEFGH")
+    hist_bin_n = FLUID_HIST_BINS * 10
+    rng = np.random.default_rng(20261017)
+
+    with plt.rc_context({"font.family": "Times New Roman", "font.size": 10,
+                         "axes.linewidth": .8, "pdf.fonttype": 42,
+                         "ps.fonttype": 42, "svg.fonttype": "none"}):
+        fig = plt.figure(figsize=(15.4, 12.8), facecolor="white")
+        gs = GridSpec(2, 4, figure=fig,
+                      width_ratios=[1.0, 1.0, 1.0, 1.18],
+                      height_ratios=[1.0, 1.0],
+                      left=.07, right=.985, bottom=.07, top=.97,
+                      wspace=.28, hspace=.26)
+
+        for col, (skey, stage_title) in enumerate(zip(stage_order, stage_titles)):
+            ax = fig.add_subplot(gs[0, col])
+            ax.set_box_aspect(2)
+            panel = panels[skey]["F/Cl"]
+            xlim = FLUID_PLOT_XLIM
+            ylim = FLUID_PLOT_FYLIM
+            ax.set(xscale="log", yscale="log", xlim=xlim, ylim=ylim,
+                   xlabel="I/Cl", ylabel="F/Cl")
+            ax.xaxis.set_major_locator(LogLocator(base=10))
+            ax.yaxis.set_major_locator(LogLocator(base=10))
+            ax.xaxis.set_major_formatter(LogFormatterMathtext())
+            ax.yaxis.set_major_formatter(LogFormatterMathtext())
+            ax.tick_params(which="major", length=4.5, width=.75, direction="in")
+            ax.tick_params(which="minor", length=2.5, width=.65, direction="in")
+            ax.text(.025, .97, letters[col], transform=ax.transAxes,
+                    fontsize=13, fontweight="bold", va="top", zorder=12)
+            ax.text(.50, .973, stage_title, transform=ax.transAxes,
+                    ha="center", va="top", fontsize=10.5, zorder=12)
+            x, y, n_display = _clean_log_arrays(
+                panel["I/Cl"].to_numpy(dtype=float),
+                panel["F/Cl"].to_numpy(dtype=float), xlim, ylim)
+            if n_display:
+                rgb = STAGE_COLORS[skey]
+                ax.scatter(x, y, marker="s", s=6.0, color=rgb,
+                           alpha=.58, linewidths=0, zorder=1,
+                           rasterized=True)
+                _kde_levels_on_log_grid(ax, x, y, rgb, xlim, ylim, rng)
+            else:
+                ax.text(.5, .5, "No jointly net-loss realizations",
+                        transform=ax.transAxes, ha="center", va="center",
+                        fontsize=9)
+
+        # D panel: horizontal histogram -- x = Count, y = F/Cl ratio
+        ax = fig.add_subplot(gs[0, 3])
+        ax.set_box_aspect(2)
+        ax.text(.015, .97, letters[3], transform=ax.transAxes,
+                ha="left", va="top", fontsize=13, fontweight="bold")
+        ax.text(.50, .973, "F/Cl", transform=ax.transAxes,
+                ha="center", va="top", fontsize=10.5)
+        limits = FLUID_PLOT_FYLIM
+        edges = np.logspace(np.log10(limits[0]), np.log10(limits[1]), hist_bin_n + 1)
+        log_bin_width = np.diff(np.log10(edges))[0]
+        smooth_log = np.linspace(np.log10(limits[0]), np.log10(limits[1]), 450)
+        max_count = 0
+        max_curve = 0.0
+        for stage_idx, skey in enumerate(stage_order):
+            colname = f"{skey}_F_Cl_mass_ratio_conditional_joint_net_loss"
+            values = pd.to_numeric(good[colname], errors="coerce").to_numpy(float)
+            values = values[np.isfinite(values) & (values > 0)]
+            display = values[(values >= limits[0]) & (values <= limits[1])]
+            color = STAGE_COLORS[skey]
+            label = f"{stage_titles[stage_idx]} (n={len(display):,})"
+
+            counts, _ = np.histogram(display, bins=edges)
+            if len(counts):
+                max_count = max(max_count, int(np.max(counts)))
+
+            ax.hist(display, bins=edges, orientation="horizontal",
+                    histtype="bar", color=color, alpha=.30,
+                    linewidth=0, label=label, zorder=2)
+
+            if len(display) >= 6 and np.std(np.log10(display)) > 1e-10:
+                sampled = (rng.choice(display, size=FLUID_KDE_MAX_POINTS, replace=False)
+                           if len(display) > FLUID_KDE_MAX_POINTS else display)
+                try:
+                    kde = gaussian_kde(np.log10(sampled))
+                    curve = kde(smooth_log) * len(display) * log_bin_width
+                    max_curve = max(max_curve, float(np.nanmax(curve)))
+                    ax.plot(curve, 10**smooth_log, color=color,
+                            lw=1.8, alpha=1.0, zorder=5)
+                except (ValueError, np.linalg.LinAlgError):
+                    pass
+
+        ax.set_yscale("log")
+        ax.set_ylim(*limits)
+        xmax = max(float(max_count), max_curve)
+        ax.set_xlim(0, xmax * 1.08 if xmax > 0 else 1)
+        ax.yaxis.set_major_locator(LogLocator(base=10))
+        ax.yaxis.set_major_formatter(LogFormatterMathtext())
+        ax.tick_params(which="both", direction="in", labelsize=10)
+        ax.set_xlabel("Count", fontsize=11)
+        ax.set_ylabel("F/Cl (mass ratio)", fontsize=11)
+        ax.legend(loc="upper right", frameon=False, fontsize=8.6)
+
+        for col, (skey, stage_title) in enumerate(zip(stage_order, stage_titles)):
+            ax = fig.add_subplot(gs[1, col])
+            ax.set_box_aspect(2)
+            panel = panels[skey]["Br/Cl"]
+            xlim = FLUID_PLOT_XLIM
+            ylim = FLUID_PLOT_BRYLIM
+            ax.set(xscale="log", yscale="log", xlim=xlim, ylim=ylim,
+                   xlabel="I/Cl", ylabel="Br/Cl")
+            ax.xaxis.set_major_locator(LogLocator(base=10))
+            ax.yaxis.set_major_locator(LogLocator(base=10))
+            ax.xaxis.set_major_formatter(LogFormatterMathtext())
+            ax.yaxis.set_major_formatter(LogFormatterMathtext())
+            ax.tick_params(which="major", length=4.5, width=.75, direction="in")
+            ax.tick_params(which="minor", length=2.5, width=.65, direction="in")
+            ax.text(.025, .97, letters[4 + col], transform=ax.transAxes,
+                    fontsize=13, fontweight="bold", va="top", zorder=12)
+            ax.text(.50, .973, stage_title, transform=ax.transAxes,
+                    ha="center", va="top", fontsize=10.5, zorder=12)
+            x, y, n_display = _clean_log_arrays(
+                panel["I/Cl"].to_numpy(dtype=float),
+                panel["Br/Cl"].to_numpy(dtype=float), xlim, ylim)
+            if n_display:
+                rgb = STAGE_COLORS[skey]
+                ax.scatter(x, y, marker="s", s=6.0, color=rgb,
+                           alpha=.58, linewidths=0, zorder=1,
+                           rasterized=True)
+                _kde_levels_on_log_grid(ax, x, y, rgb, xlim, ylim, rng)
+            else:
+                ax.text(.5, .5, "No jointly net-loss realizations",
+                        transform=ax.transAxes, ha="center", va="center",
+                        fontsize=9)
+
+        # H panel: horizontal histogram -- x = Count, y = Br/Cl ratio
+        ax = fig.add_subplot(gs[1, 3])
+        ax.set_box_aspect(2)
+        ax.text(.015, .97, letters[7], transform=ax.transAxes,
+                ha="left", va="top", fontsize=13, fontweight="bold")
+        ax.text(.50, .973, "Br/Cl", transform=ax.transAxes,
+                ha="center", va="top", fontsize=10.5)
+        limits = FLUID_PLOT_BRYLIM
+        edges = np.logspace(np.log10(limits[0]), np.log10(limits[1]), hist_bin_n + 1)
+        log_bin_width = np.diff(np.log10(edges))[0]
+        smooth_log = np.linspace(np.log10(limits[0]), np.log10(limits[1]), 450)
+        max_count = 0
+        max_curve = 0.0
+        for stage_idx, skey in enumerate(stage_order):
+            colname = f"{skey}_Br_Cl_mass_ratio_conditional_joint_net_loss"
+            values = pd.to_numeric(good[colname], errors="coerce").to_numpy(float)
+            values = values[np.isfinite(values) & (values > 0)]
+            display = values[(values >= limits[0]) & (values <= limits[1])]
+            color = STAGE_COLORS[skey]
+            label = f"{stage_titles[stage_idx]} (n={len(display):,})"
+
+            counts, _ = np.histogram(display, bins=edges)
+            if len(counts):
+                max_count = max(max_count, int(np.max(counts)))
+
+            ax.hist(display, bins=edges, orientation="horizontal",
+                    histtype="bar", color=color, alpha=.30,
+                    linewidth=0, label=label, zorder=2)
+
+            if len(display) >= 6 and np.std(np.log10(display)) > 1e-10:
+                sampled = (rng.choice(display, size=FLUID_KDE_MAX_POINTS, replace=False)
+                           if len(display) > FLUID_KDE_MAX_POINTS else display)
+                try:
+                    kde = gaussian_kde(np.log10(sampled))
+                    curve = kde(smooth_log) * len(display) * log_bin_width
+                    max_curve = max(max_curve, float(np.nanmax(curve)))
+                    ax.plot(curve, 10**smooth_log, color=color,
+                            lw=1.8, alpha=1.0, zorder=5)
+                except (ValueError, np.linalg.LinAlgError):
+                    pass
+
+        ax.set_yscale("log")
+        ax.set_ylim(*limits)
+        xmax = max(float(max_count), max_curve)
+        ax.set_xlim(0, xmax * 1.08 if xmax > 0 else 1)
+        ax.yaxis.set_major_locator(LogLocator(base=10))
+        ax.yaxis.set_major_formatter(LogFormatterMathtext())
+        ax.tick_params(which="both", direction="in", labelsize=10)
+        ax.set_xlabel("Count", fontsize=11)
+        ax.set_ylabel("Br/Cl (mass ratio)", fontsize=11)
+        ax.legend(loc="upper right", frameon=False, fontsize=8.6)
+
+        for extension in ("svg", "pdf"):
+            fig.savefig(outdir / f"Fig_fluid_combined_2row4col.{extension}",
+                        bbox_inches="tight")
+        fig.savefig(outdir / "Fig_fluid_combined_2row4col.jpg",
+                    bbox_inches="tight", dpi=PLOT_DPI)
+        plt.close(fig)
+
     return diagnostic
 
 
@@ -2405,7 +2671,7 @@ def main() -> None:
         )
 
     # -------------------------------------------------------------------------
-    # First-code vs third-code F sign diagnostic and fluid-only 3 x 2 figure
+    # First-code vs third-code F audit and two released-fluid figures
     # -------------------------------------------------------------------------
     f_audit_df = make_f_reconciliation_audit(df, admissible_df, outdir)
     print("\nF concentration-vs-inventory reconciliation:")
@@ -2413,7 +2679,7 @@ def main() -> None:
                       "P_F_net_loss_given_evaluable",
                       "P_F_apparent_gain_given_evaluable"]].to_string(index=False))
     if MAKE_FLUID_6PANEL_FIGURE:
-        fluid_plot_audit = plot_six_panel_released_fluids(admissible_df, outdir)
+        fluid_plot_audit = plot_combined_released_fluid_figure(admissible_df, outdir)
         print("\nReleased-fluid plot selection (three elements jointly net-loss):")
         print(fluid_plot_audit[["stage", "panel",
                                 "N_three_elements_joint_net_loss",

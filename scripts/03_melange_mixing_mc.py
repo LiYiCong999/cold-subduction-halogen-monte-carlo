@@ -2,6 +2,15 @@
 """
 Style-matched version of the mélange Monte Carlo comparison figure.
 
+Modified version:
+    - Monte Carlo iterations reduced to 10,000 per metamafic row
+    - final output contains two figures only
+    - both forearc- and subarc-serpentinite endmembers are simulated independently
+    - both figures remove marginal histograms and distribution curves
+    - Figure 1 shows 95% confidence/probability regions for the three dominant mélange types
+    - Figure 2 shows the same results as scatter plots only
+
+
 Main purpose of this version:
     Keep the same scientific logic as the previous script, but make the final
     output figure style closer to the user-provided reference image, including:
@@ -42,10 +51,10 @@ from scipy.stats import gaussian_kde
 # USER SETTINGS
 # ============================================================
 
-INPUT_CSV = "data/halogen_data.csv"
-OUTPUT_DIR = Path("results/NC_melange_MC_stylematch_v7_output")
+INPUT_CSV = Path(__file__).resolve().parents[1] / "data" / "halogen_data.csv"
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "NC_melange_MC_forearc_subarc_two_figures"
 
-N_ITER_PER_ROW = 300_000
+N_ITER_PER_ROW = 10_000
 RANDOM_SEED = 20261003
 
 X_LIMITS = (1e-6, 1e-1)
@@ -82,6 +91,12 @@ ROW_COLORSETS = {
 
 
 ROW_ORDER = ["Blueschist", "HP eclogite", "UHP eclogite"]
+
+SERPENTINITE_ORDER = ["forearc serpentinite", "subarc serpentinite"]
+SERPENTINITE_LABELS = {
+    "forearc serpentinite": "Forearc serpentinite endmember",
+    "subarc serpentinite": "Subarc serpentinite endmember",
+}
 ROW_TITLES = {
     "Blueschist": "Blueschist domain (1)",
     "HP eclogite": "HP eclogite domain (2)",
@@ -173,6 +188,94 @@ def summarize_result(df, group_cols, value_cols):
                 **summarize_array(sub[col].to_numpy())
             })
     return pd.DataFrame(rows)
+
+
+def draw_ci95_region(ax, x, y, color, xlim, ylim):
+    """
+    Draw a 95% highest-density / confidence-like region in log-log space.
+
+    For Monte Carlo results, this is implemented as a 2-D KDE on log10(I/Cl) and
+    log10(y), then the density threshold is chosen so that the enclosed grid cells
+    contain ~95% of the total KDE probability mass.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    mask = np.isfinite(x) & np.isfinite(y) & (x > 0) & (y > 0)
+    x = x[mask]
+    y = y[mask]
+
+    if len(x) < 30:
+        return
+
+    lx = np.log10(x)
+    ly = np.log10(y)
+
+    try:
+        kde = gaussian_kde(np.vstack([lx, ly]))
+    except Exception:
+        return
+
+    gx = np.linspace(np.log10(xlim[0]), np.log10(xlim[1]), 180)
+    gy = np.linspace(np.log10(ylim[0]), np.log10(ylim[1]), 180)
+    Xg, Yg = np.meshgrid(gx, gy)
+    positions = np.vstack([Xg.ravel(), Yg.ravel()])
+    Z = kde(positions).reshape(Xg.shape)
+
+    if not np.isfinite(Z).any() or np.nanmax(Z) <= 0:
+        return
+
+    flat = Z.ravel()
+    order = np.argsort(flat)[::-1]
+    flat_sorted = flat[order]
+    csum = np.cumsum(flat_sorted)
+    csum = csum / csum[-1]
+    idx = np.searchsorted(csum, 0.95, side='left')
+    idx = min(idx, len(flat_sorted)-1)
+    level = flat_sorted[idx]
+
+    X = 10 ** Xg
+    Y = 10 ** Yg
+
+    ax.contourf(
+        X, Y, Z,
+        levels=[level, Z.max() * (1.0 + 1e-10)],
+        colors=[color],
+        alpha=0.26,
+        antialiased=True,
+        zorder=2,
+    )
+    ax.contour(
+        X, Y, Z,
+        levels=[level],
+        colors=[color],
+        linewidths=1.25,
+        alpha=1.0,
+        zorder=3,
+    )
+
+
+def draw_square_scatter(ax, x, y, color):
+    """Plot square scatter points as one coherent point cloud."""
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    mask = np.isfinite(x) & np.isfinite(y) & (x > 0) & (y > 0)
+    x = x[mask]
+    y = y[mask]
+
+    if len(x) == 0:
+        return
+
+    ax.scatter(
+        x, y,
+        s=7.0,
+        marker='s',
+        facecolors=color,
+        edgecolors='none',
+        alpha=0.58,
+        zorder=3,
+        rasterized=True,
+    )
 
 
 def draw_density_contours(ax, x, y, color, xlim, ylim):
@@ -494,6 +597,36 @@ def format_right_axis(ax, ylim, count_max):
 # DATA
 # ============================================================
 
+def _canonical_rock_type(value):
+    """Normalize common Rock_Type spellings to the canonical labels used below."""
+    s = str(value).strip()
+    key = " ".join(s.lower().replace("_", " ").replace("-", " ").split())
+
+    mapping = {
+        "metasediment": "metasediment",
+        "metasediments": "metasediment",
+        "forearc serpentinite": "forearc serpentinite",
+        "forearc serpentinites": "forearc serpentinite",
+        "fore arc serpentinite": "forearc serpentinite",
+        "fore arc serpentinites": "forearc serpentinite",
+        "subarc serpentinite": "subarc serpentinite",
+        "subarc serpentinites": "subarc serpentinite",
+        "sub arc serpentinite": "subarc serpentinite",
+        "sub arc serpentinites": "subarc serpentinite",
+        "blueschist": "Blueschist",
+        "blueschists": "Blueschist",
+        "hp eclogite": "HP eclogite",
+        "hp eclogites": "HP eclogite",
+        "high pressure eclogite": "HP eclogite",
+        "high pressure eclogites": "HP eclogite",
+        "uhp eclogite": "UHP eclogite",
+        "uhp eclogites": "UHP eclogite",
+        "ultrahigh pressure eclogite": "UHP eclogite",
+        "ultrahigh pressure eclogites": "UHP eclogite",
+    }
+    return mapping.get(key, s)
+
+
 def load_data(path):
     df = pd.read_csv(path)
 
@@ -502,6 +635,8 @@ def load_data(path):
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
+    df["Rock_Type"] = df["Rock_Type"].map(_canonical_rock_type)
+
     for col in ["F_ppm", "Cl_ppm", "Br_ppb", "I_ppb"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
@@ -509,8 +644,32 @@ def load_data(path):
     df = df[(df["F_ppm"] >= 0) & (df["Cl_ppm"] >= 0) &
             (df["Br_ppb"] >= 0) & (df["I_ppb"] >= 0)].copy()
 
-    used_types = {"metasediment", "forearc serpentinite", "Blueschist", "HP eclogite", "UHP eclogite"}
+    used_types = {
+        "metasediment",
+        "forearc serpentinite",
+        "subarc serpentinite",
+        "Blueschist",
+        "HP eclogite",
+        "UHP eclogite",
+    }
     df = df[df["Rock_Type"].isin(used_types)].copy()
+
+    required_types = [
+        "metasediment",
+        "forearc serpentinite",
+        "subarc serpentinite",
+        "Blueschist",
+        "HP eclogite",
+        "UHP eclogite",
+    ]
+    missing_types = [t for t in required_types if (df["Rock_Type"] == t).sum() == 0]
+    if missing_types:
+        raise ValueError(
+            "No usable samples found for required Rock_Type(s): "
+            + ", ".join(missing_types)
+            + ".\nFor the new serpentinite scenario, accepted labels include "
+              "'subarc serpentinite' or 'subarc serpentinites'."
+        )
 
     print("Usable sample counts by Rock_Type:")
     print(df["Rock_Type"].value_counts())
@@ -522,13 +681,18 @@ def load_data(path):
 # MONTE CARLO
 # ============================================================
 
-def run_one_row(df_all, metamafic_type, n_iter, seed):
+def run_one_row(df_all, metamafic_type, serpentinite_type, n_iter, seed):
+    """Run one metamafic stage using the selected serpentinite endmember."""
     rng = np.random.default_rng(seed)
 
     sed = df_all[df_all["Rock_Type"] == "metasediment"].reset_index(drop=True)
     maf = df_all[df_all["Rock_Type"] == metamafic_type].reset_index(drop=True)
-    serp = df_all[df_all["Rock_Type"] == "forearc serpentinite"].reset_index(drop=True)
+    serp = df_all[df_all["Rock_Type"] == serpentinite_type].reset_index(drop=True)
 
+    if len(serp) == 0:
+        raise ValueError(f"No samples available for serpentinite endmember: {serpentinite_type}")
+
+    # Same Dirichlet(1,1,1) mixing logic as before.
     P = rng.dirichlet([1.0, 1.0, 1.0], size=n_iter)
 
     dominant_idx = np.argmax(P, axis=1)
@@ -568,6 +732,7 @@ def run_one_row(df_all, metamafic_type, n_iter, seed):
     I_mix_ppm = I_mix_ppb / 1000.0
 
     out = pd.DataFrame({
+        "serpentinite_endmember": serpentinite_type,
         "metamafic_type": metamafic_type,
         "melange_type": melange_type,
         "metasediment_fraction": P[:, 0],
@@ -586,9 +751,22 @@ def run_one_row(df_all, metamafic_type, n_iter, seed):
 
 
 def run_all_rows(df, n_iter, seed):
+    """Run both forearc- and subarc-serpentinite mixing scenarios."""
     outputs = []
-    for i, metamafic_type in enumerate(ROW_ORDER):
-        outputs.append(run_one_row(df, metamafic_type, n_iter, seed + i * 100))
+    for serpentinite_type in SERPENTINITE_ORDER:
+        for i, metamafic_type in enumerate(ROW_ORDER):
+            # Use the same stage-specific seed for both serpentinite scenarios.
+            # This keeps the mixing-fraction and metasediment/metamafic sampling
+            # structure directly comparable; only the serpentinite endmember changes.
+            outputs.append(
+                run_one_row(
+                    df,
+                    metamafic_type=metamafic_type,
+                    serpentinite_type=serpentinite_type,
+                    n_iter=n_iter,
+                    seed=seed + i * 100,
+                )
+            )
     return pd.concat(outputs, ignore_index=True)
 
 
@@ -596,117 +774,213 @@ def run_all_rows(df, n_iter, seed):
 # FIGURE
 # ============================================================
 
-def build_figure(df, output_dir):
+def _style_simple_panel(ax, ylabel, ylim, letter=None, title=None):
+    format_main_axis(ax, "I/Cl", ylabel, X_LIMITS, ylim)
+    ax.set_box_aspect(0.875)
+    if letter is not None:
+        ax.text(
+            0.055, 0.93, letter,
+            transform=ax.transAxes,
+            fontsize=13.5, fontweight="bold", ha="left", va="center"
+        )
+    if title:
+        ax.set_title(title, fontsize=12.3, fontweight="normal", pad=10)
+
+
+def _add_hp_uhp_legend(ax):
+    handles = []
+    for metamafic_type, prefix in [("HP eclogite", "HP"), ("UHP eclogite", "UHP")]:
+        colors = ROW_COLORSETS[metamafic_type]
+        for melange_name, pretty in [
+            ("metasediment-dominated", "Sediment-dominated"),
+            ("metamafic-dominated", "Metamafic-dominated"),
+            ("serpentinite-dominated", "Serpentinite-dominated"),
+        ]:
+            handles.append(
+                Line2D([0], [0], color=colors[melange_name], lw=1.7, label=f"{prefix} {pretty}")
+            )
+    legend = ax.legend(
+        handles=handles, loc="lower right", fontsize=7.5,
+        handlelength=1.9, borderpad=0.28, labelspacing=0.18,
+        handletextpad=0.45, frameon=True, fancybox=False,
+        framealpha=1.0, borderaxespad=0.6, ncol=1,
+    )
+    legend.get_frame().set_linewidth(0.75)
+    legend.get_frame().set_edgecolor("#555555")
+    legend.get_frame().set_facecolor("white")
+
+
+def build_figure_hp_uhp_by_serpentinite(df, output_dir):
+    """
+    Figure 1: HP + UHP 95% regions, 2 rows × 2 columns.
+
+    Rows:
+      1) F/Cl vs I/Cl
+      2) Br/Cl vs I/Cl
+    Columns:
+      1) forearc serpentinite endmember
+      2) subarc serpentinite endmember
+    """
     apply_reference_style()
 
-    fig = plt.figure(figsize=(13.6, 17.6), facecolor=FIG_FACE)
+    fig = plt.figure(figsize=(13.8, 11.5), facecolor=FIG_FACE)
     outer = fig.add_gridspec(
-        3, 2,
-        left=0.065, right=0.975, top=0.985, bottom=0.05,
-        wspace=0.205, hspace=0.19
+        2, 2,
+        left=0.075, right=0.975, top=0.945, bottom=0.075,
+        wspace=0.20, hspace=0.24
     )
 
-    # Common marginal-axis count scales make the six panels directly comparable.
-    TOP_COUNT_MAX, RIGHT_COUNT_MAX_FCL, RIGHT_COUNT_MAX_BRCL = compute_marginal_count_limits(df)
+    row_specs = [
+        ("F_Cl", "F/Cl", Y_LIMITS_FCL),
+        ("Br_Cl", "Br/Cl", Y_LIMITS_BRCL),
+    ]
+    panel_letters = ["A", "B", "C", "D"]
+    idx = 0
 
-    panel_idx = 0
+    for row, (ycol, ylabel, ylim) in enumerate(row_specs):
+        for col, serpentinite_type in enumerate(SERPENTINITE_ORDER):
+            ax = fig.add_subplot(outer[row, col], facecolor=AX_FACE)
+            scenario_df = df[df["serpentinite_endmember"] == serpentinite_type]
 
-    for row, metamafic_type in enumerate(ROW_ORDER):
-        row_df = df[df["metamafic_type"] == metamafic_type].copy()
-        row_colors = ROW_COLORSETS[metamafic_type]
+            for metamafic_type in ["HP eclogite", "UHP eclogite"]:
+                stage_df = scenario_df[scenario_df["metamafic_type"] == metamafic_type]
+                stage_colors = ROW_COLORSETS[metamafic_type]
 
-        for col, (ycol, ylabel, ylim) in enumerate([
-            ("F_Cl", "F/Cl", Y_LIMITS_FCL),
-            ("Br_Cl", "Br/Cl", Y_LIMITS_BRCL),
-        ]):
-            subgrid = outer[row, col].subgridspec(
-                2, 2,
-                height_ratios=[0.82, 7.00],
-                width_ratios=[7.00, 0.92],
-                hspace=0.04,
-                wspace=0.03,
+                for melange_name in [
+                    "metasediment-dominated",
+                    "metamafic-dominated",
+                    "serpentinite-dominated",
+                ]:
+                    sub = stage_df[stage_df["melange_type"] == melange_name]
+                    draw_ci95_region(
+                        ax,
+                        sub["I_Cl"].to_numpy(),
+                        sub[ycol].to_numpy(),
+                        stage_colors[melange_name],
+                        X_LIMITS,
+                        ylim,
+                    )
+
+            _style_simple_panel(
+                ax, ylabel, ylim,
+                letter=panel_letters[idx],
+                title=SERPENTINITE_LABELS[serpentinite_type],
             )
+            if row == 0 and col == 0:
+                _add_hp_uhp_legend(ax)
+            idx += 1
 
-            ax_top = fig.add_subplot(subgrid[0, 0], facecolor=AX_FACE)
-            ax_main = fig.add_subplot(subgrid[1, 0], facecolor=AX_FACE)
-            ax_right = fig.add_subplot(subgrid[1, 1], sharey=ax_main, facecolor=AX_FACE)
-            ax_blank = fig.add_subplot(subgrid[0, 1], facecolor=AX_FACE)
-            ax_blank.axis("off")
+    fig.text(
+        0.5, 0.985,
+        "HP and UHP eclogite mélange: effect of serpentinite endmember",
+        ha="center", va="top", fontsize=14.0, fontweight="normal"
+    )
 
-            for melange_name in ["metasediment-dominated", "metamafic-dominated", "serpentinite-dominated"]:
-                color = row_colors[melange_name]
-                sub = row_df[row_df["melange_type"] == melange_name]
+    fig.savefig(output_dir / "Figure1_HP_UHP_CI95_forearc_vs_subarc.png", dpi=600)
+    fig.savefig(output_dir / "Figure1_HP_UHP_CI95_forearc_vs_subarc.pdf")
+    fig.savefig(output_dir / "Figure1_HP_UHP_CI95_forearc_vs_subarc.svg")
+    plt.close(fig)
 
-                x = sub["I_Cl"].to_numpy()
-                y = sub[ycol].to_numpy()
-                mask = np.isfinite(x) & np.isfinite(y) & (x > 0) & (y > 0)
-                x = x[mask]
-                y = y[mask]
 
-                draw_density_contours(ax_main, x, y, color, X_LIMITS, ylim)
-                draw_top_hist(ax_top, x, color, X_LIMITS)
-                draw_right_hist(ax_right, y, color, ylim)
+def _add_three_melange_legend(ax, row_colors):
+    handles = [
+        Line2D([0], [0], color=row_colors["metasediment-dominated"], lw=1.7, label="Sediment-dominated"),
+        Line2D([0], [0], color=row_colors["metamafic-dominated"], lw=1.7, label="Metamafic-dominated"),
+        Line2D([0], [0], color=row_colors["serpentinite-dominated"], lw=1.7, label="Serpentinite-dominated"),
+    ]
+    legend = ax.legend(
+        handles=handles, loc="lower right", fontsize=7.7,
+        handlelength=2.0, borderpad=0.25, labelspacing=0.20,
+        handletextpad=0.50, frameon=True, fancybox=False,
+        framealpha=1.0, borderaxespad=0.55,
+    )
+    legend.get_frame().set_linewidth(0.75)
+    legend.get_frame().set_edgecolor("#555555")
+    legend.get_frame().set_facecolor("white")
 
-            format_main_axis(ax_main, "I/Cl", ylabel, X_LIMITS, ylim)
 
-            # Reference panel is a slightly wider-than-tall rectangle.
-            # height / width ~= 0.875.
-            ax_main.set_box_aspect(0.875)
+def build_figure_all_12_panels(df, output_dir):
+    """
+    Figure 2: 12 panels.
 
-            format_top_axis(ax_top, X_LIMITS, TOP_COUNT_MAX)
+    The original 2×3 layout is retained for each serpentinite endmember:
+      Forearc block (rows 1–2): F/Cl, then Br/Cl; columns BS, HP, UHP.
+      Subarc block  (rows 3–4): F/Cl, then Br/Cl; columns BS, HP, UHP.
 
-            if ycol == "F_Cl":
-                right_count_max = RIGHT_COUNT_MAX_FCL
-            else:
-                right_count_max = RIGHT_COUNT_MAX_BRCL
+    Each panel keeps the 95% region + rasterized scatter overlay.
+    """
+    apply_reference_style()
 
-            format_right_axis(ax_right, ylim, right_count_max)
+    fig = plt.figure(figsize=(17.2, 22.2), facecolor=FIG_FACE)
+    outer = fig.add_gridspec(
+        4, 3,
+        left=0.055, right=0.985, top=0.955, bottom=0.045,
+        wspace=0.20, hspace=0.26
+    )
 
-            ax_main.text(
-                0.06, 0.93, PANEL_LETTERS[panel_idx],
-                transform=ax_main.transAxes,
-                fontsize=13.5, fontweight="bold", ha="left", va="center"
-            )
+    stage_order = ["Blueschist", "HP eclogite", "UHP eclogite"]
+    row_specs = [
+        ("F_Cl", "F/Cl", Y_LIMITS_FCL),
+        ("Br_Cl", "Br/Cl", Y_LIMITS_BRCL),
+    ]
+    panel_letters = list("ABCDEFGHIJKL")
+    idx = 0
 
-            ax_main.text(
-                0.5, 0.95, ROW_TITLES[metamafic_type],
-                transform=ax_main.transAxes,
-                ha="center", va="center",
-                fontsize=12.8, fontweight="normal"
-            )
+    for scenario_idx, serpentinite_type in enumerate(SERPENTINITE_ORDER):
+        scenario_df = df[df["serpentinite_endmember"] == serpentinite_type]
+        row_offset = scenario_idx * 2
 
-            handles = [
-                Line2D([0], [0], color=row_colors["metasediment-dominated"],
-                       lw=1.7, label="Sediment-dominated"),
-                Line2D([0], [0], color=row_colors["metamafic-dominated"],
-                       lw=1.7, label="Metamafic-dominated"),
-                Line2D([0], [0], color=row_colors["serpentinite-dominated"],
-                       lw=1.7, label="Serpentinite-dominated"),
-            ]
+        for local_row, (ycol, ylabel, ylim) in enumerate(row_specs):
+            grid_row = row_offset + local_row
 
-            if col == 0:
-                legend = ax_main.legend(
-                    handles=handles,
-                    loc="lower right",
-                    fontsize=8.3,
-                    handlelength=2.15,
-                    borderpad=0.28,
-                    labelspacing=0.25,
-                    handletextpad=0.55,
-                    frameon=True,
-                    fancybox=False,
-                    framealpha=1.0,
-                    borderaxespad=0.65,
+            for col, metamafic_type in enumerate(stage_order):
+                ax = fig.add_subplot(outer[grid_row, col], facecolor=AX_FACE)
+                stage_df = scenario_df[scenario_df["metamafic_type"] == metamafic_type]
+                row_colors = ROW_COLORSETS[metamafic_type]
+
+                for melange_name in [
+                    "metasediment-dominated",
+                    "metamafic-dominated",
+                    "serpentinite-dominated",
+                ]:
+                    sub = stage_df[stage_df["melange_type"] == melange_name]
+                    x = sub["I_Cl"].to_numpy()
+                    y = sub[ycol].to_numpy()
+                    color = row_colors[melange_name]
+                    draw_ci95_region(ax, x, y, color, X_LIMITS, ylim)
+                    draw_square_scatter(ax, x, y, color)
+
+                format_main_axis(ax, "I/Cl", ylabel, X_LIMITS, ylim)
+                ax.set_box_aspect(0.875)
+                ax.text(
+                    0.055, 0.93, panel_letters[idx],
+                    transform=ax.transAxes, fontsize=13.0, fontweight="bold",
+                    ha="left", va="center"
                 )
-                legend.get_frame().set_linewidth(0.75)
-                legend.get_frame().set_edgecolor("#555555")
-                legend.get_frame().set_facecolor("white")
+                ax.text(
+                    0.50, 0.95, ROW_TITLES[metamafic_type],
+                    transform=ax.transAxes, ha="center", va="center",
+                    fontsize=11.8, fontweight="normal"
+                )
 
-            panel_idx += 1
+                if local_row == 0 and col == 0:
+                    _add_three_melange_legend(ax, row_colors)
 
-    fig.savefig(output_dir / "Figure_compare_three_melanges_by_mafic_type_stylematch_v7.png", dpi=600)
-    fig.savefig(output_dir / "Figure_compare_three_melanges_by_mafic_type_stylematch_v7.pdf")
-    fig.savefig(output_dir / "Figure_compare_three_melanges_by_mafic_type_stylematch_v7.svg")
+                idx += 1
+
+    # Block labels clearly distinguish the serpentinite endmember used.
+    fig.text(
+        0.52, 0.982, "Serpentinite endmember: Forearc serpentinite",
+        ha="center", va="top", fontsize=14.0, fontweight="bold"
+    )
+    fig.text(
+        0.52, 0.507, "Serpentinite endmember: Subarc serpentinite",
+        ha="center", va="center", fontsize=14.0, fontweight="bold"
+    )
+
+    fig.savefig(output_dir / "Figure2_all12_forearc_subarc_CI95_plus_scatter.png", dpi=600)
+    fig.savefig(output_dir / "Figure2_all12_forearc_subarc_CI95_plus_scatter.pdf")
+    fig.savefig(output_dir / "Figure2_all12_forearc_subarc_CI95_plus_scatter.svg")
     plt.close(fig)
 
 
@@ -721,21 +995,27 @@ def main():
     df.to_csv(OUTPUT_DIR / "input_data_used.csv", index=False)
 
     result = run_all_rows(df, N_ITER_PER_ROW, RANDOM_SEED)
-    result.to_csv(OUTPUT_DIR / "melange_all_iterations_by_mafic_type.csv", index=False)
+    result.to_csv(OUTPUT_DIR / "melange_all_iterations_forearc_subarc.csv", index=False)
 
     summary = summarize_result(
         result,
-        group_cols=["metamafic_type", "melange_type"],
+        group_cols=["serpentinite_endmember", "metamafic_type", "melange_type"],
         value_cols=[
             "metasediment_fraction", "metamafic_fraction", "serpentinite_fraction",
             "F_ppm", "Cl_ppm", "Br_ppb", "I_ppb", "F_Cl", "Br_Cl", "I_Cl"
         ]
     )
-    summary.to_csv(OUTPUT_DIR / "melange_summary_by_mafic_type.csv", index=False)
+    summary.to_csv(OUTPUT_DIR / "melange_summary_forearc_subarc.csv", index=False)
 
-    build_figure(result, OUTPUT_DIR)
+    # Final output: only the two requested figures.
+    build_figure_hp_uhp_by_serpentinite(result, OUTPUT_DIR)
+    build_figure_all_12_panels(result, OUTPUT_DIR)
 
     print("\nFinished successfully.")
+    print(f"Monte Carlo iterations per metamafic stage and serpentinite scenario: {N_ITER_PER_ROW:,}")
+    print("Serpentinite endmembers: forearc serpentinite + subarc serpentinite")
+    print("Figure 1: 2x2 HP/UHP 95% regions; columns = forearc vs subarc serpentinite")
+    print("Figure 2: 12 panels; two original-style 2x3 blocks, one per serpentinite endmember")
     print(f"All outputs saved to: {OUTPUT_DIR.resolve()}")
 
 
