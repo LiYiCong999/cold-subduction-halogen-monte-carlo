@@ -1,15 +1,7 @@
-﻿Rock_Type,F_ppm,Cl_ppm,Br_ppb,I_ppb
+Rock_Type,F_ppm,Cl_ppm,Br_ppb,I_ppb
 metasediment,495,20,1,0.03
 metasediment,780,6,9,0.3
 metasediment,302,18,1,0.1
-forearc serpentinite,,420,2700,6200
-forearc serpentinite,,1000,8200,45000
-forearc serpentinite,,1200,8200,35000
-forearc serpentinite,,630,5100,18000
-forearc serpentinite,,2300,24000,9400
-forearc serpentinite,,1100,5700,2100
-forearc serpentinite,,1100,8400,5200
-forearc serpentinite,,990,7200,6900
 forearc serpentinite,101,612,1300,200
 forearc serpentinite,60,666,970,80
 forearc serpentinite,72,729,1100,58
@@ -22,6 +14,15 @@ forearc serpentinite,96,365,790,70
 forearc serpentinite,66,488,1500,170
 forearc serpentinite,59,360,600,80
 forearc serpentinite,13,363,671,120
+subarc serpentinites,104,21,209,420
+subarc serpentinites,96,13,95,170
+subarc serpentinites,140,10,194,190
+subarc serpentinites,50,35,206,150
+subarc serpentinites,649,9,45,29
+subarc serpentinites,298,14,76,180
+subarc serpentinites,132,12,252,130
+subarc serpentinites,100,14,106,64
+subarc serpentinites,96,9,27,49
 Blueschist,588,17,159,169
 Blueschist,504,18,226,185
 Blueschist,387,15,111,143
