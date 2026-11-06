@@ -62,6 +62,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 
 # =============================================================================
@@ -72,7 +73,7 @@ import matplotlib.pyplot as plt
 INPUT_CSV = Path(__file__).resolve().parents[1] / "data" / "bulk_data.csv"
 
 # Relative path: output folder will be created under the current working directory.
-OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "MC_halogen_dehydration_NC_two_row_four_col"
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "MC_halogen_dehydration_NC-两行四列合并图版-3"
 
 # Main Monte Carlo size.
 N_SIM = 100_000
@@ -1846,41 +1847,169 @@ def _clean_log_arrays(x: np.ndarray, y: np.ndarray, xlim, ylim):
 
 
 def _kde_levels_on_log_grid(ax, x, y, base_color, xlim, ylim, rng):
-    """Display a stage-colored filled 2-D KDE ABOVE the square scatter layer."""
+    """Display the existing 2-D KDE and return the exact plotted KDE grid.
+
+    The current darkest/innermost KDE region is:
+        density >= 0.83 * maximum density
+    """
     if len(x) < 6:
-        return
+        return None
+
     from scipy.stats import gaussian_kde
     from matplotlib.colors import to_rgb
-    if len(x) > FLUID_KDE_MAX_POINTS:
-        indices = rng.choice(len(x), size=FLUID_KDE_MAX_POINTS, replace=False)
-        x, y = x[indices], y[indices]
-    xy = np.vstack((np.log10(x), np.log10(y)))
+
+    x_all = np.asarray(x, dtype=float)
+    y_all = np.asarray(y, dtype=float)
+    x_fit = x_all
+    y_fit = y_all
+
+    # Keep the ORIGINAL KDE fitting behavior.
+    if len(x_fit) > FLUID_KDE_MAX_POINTS:
+        indices = rng.choice(
+            len(x_fit), size=FLUID_KDE_MAX_POINTS, replace=False
+        )
+        x_fit = x_fit[indices]
+        y_fit = y_fit[indices]
+
+    xy = np.vstack((np.log10(x_fit), np.log10(y_fit)))
     if np.linalg.matrix_rank(np.cov(xy)) < 2:
-        return
+        return None
+
     try:
         estimator = gaussian_kde(xy)
-        gx = np.linspace(np.log10(xlim[0]), np.log10(xlim[1]), FLUID_KDE_GRID)
-        gy = np.linspace(np.log10(ylim[0]), np.log10(ylim[1]), FLUID_KDE_GRID)
+        gx = np.linspace(
+            np.log10(xlim[0]), np.log10(xlim[1]), FLUID_KDE_GRID
+        )
+        gy = np.linspace(
+            np.log10(ylim[0]), np.log10(ylim[1]), FLUID_KDE_GRID
+        )
         X, Y = np.meshgrid(gx, gy)
-        z = estimator(np.vstack((X.ravel(), Y.ravel()))).reshape(X.shape)
+        z = estimator(
+            np.vstack((X.ravel(), Y.ravel()))
+        ).reshape(X.shape)
     except (ValueError, np.linalg.LinAlgError):
-        return
+        return None
+
     peak = float(np.max(z))
     if not np.isfinite(peak) or peak <= 0:
-        return
+        return None
+
     rgb = np.array(to_rgb(base_color))
-    # Pale peripheral KDE shades through a saturated central core.
-    # The KDE fill is semi-transparent so underlying points remain visible.
-    # Levels cover the actual KDE peak; no value above 100% is omitted.
+
+    # ORIGINAL plotting levels: unchanged.
     levels = np.array([.12, .28, .46, .66, .83, 1.001]) * peak
     mixes = (.22, .40, .59, .78, .98)
-    shades = [tuple((1 - t) * np.ones(3) + t * rgb) for t in mixes]
+    shades = [
+        tuple((1 - t) * np.ones(3) + t * rgb)
+        for t in mixes
+    ]
+
     if np.min(z) < levels[0]:
-        ax.contourf(10**X, 10**Y, z, levels=levels,
-                    colors=shades, alpha=.68, antialiased=True, zorder=5)
-        ax.contour(10**X, 10**Y, z, levels=levels[:-1],
-                   colors=[tuple(rgb*.72)], linewidths=.55,
-                   linestyles="solid", zorder=6)
+        ax.contourf(
+            10**X, 10**Y, z,
+            levels=levels,
+            colors=shades,
+            alpha=.68,
+            antialiased=True,
+            zorder=5,
+        )
+        ax.contour(
+            10**X, 10**Y, z,
+            levels=levels[:-1],
+            colors=[tuple(rgb * .72)],
+            linewidths=.55,
+            linestyles="solid",
+            zorder=6,
+        )
+
+    return {
+        "gx_log10": gx,
+        "gy_log10": gy,
+        "z": z,
+        "peak_density": peak,
+        "core_density_threshold": 0.83 * peak,
+        "N_kde_fit": int(len(x_fit)),
+    }
+
+
+def _density_core_statistics(x, y, kde_info):
+    """Return mean and +/-2sigma for points inside the darkest KDE core.
+
+    The core is defined by the plotting scheme itself:
+        local KDE density >= 0.83 * maximum KDE density
+
+    Statistics are calculated in original ratio space.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    if kde_info is None or len(x) == 0:
+        return {
+            "N_total": int(len(x)),
+            "N_core": 0,
+            "x_mean": np.nan,
+            "x_2sigma": np.nan,
+            "y_mean": np.nan,
+            "y_2sigma": np.nan,
+        }
+
+    from scipy.interpolate import RegularGridInterpolator
+
+    valid = np.isfinite(x) & np.isfinite(y) & (x > 0) & (y > 0)
+    x = x[valid]
+    y = y[valid]
+
+    interp = RegularGridInterpolator(
+        (kde_info["gy_log10"], kde_info["gx_log10"]),
+        kde_info["z"],
+        bounds_error=False,
+        fill_value=np.nan,
+    )
+
+    local_density = interp(
+        np.column_stack((np.log10(y), np.log10(x)))
+    )
+
+    core_mask = (
+        np.isfinite(local_density)
+        & (local_density >= kde_info["core_density_threshold"])
+    )
+    x_core = x[core_mask]
+    y_core = y[core_mask]
+
+    def _mean_2sigma(arr):
+        if len(arr) == 0:
+            return np.nan, np.nan
+        mean = float(np.mean(arr))
+        if len(arr) < 2:
+            return mean, np.nan
+        two_sigma = float(2.0 * np.std(arr, ddof=1))
+        return mean, two_sigma
+
+    x_mean, x_2sigma = _mean_2sigma(x_core)
+    y_mean, y_2sigma = _mean_2sigma(y_core)
+
+    return {
+        "N_total": int(len(x)),
+        "N_core": int(len(x_core)),
+        "x_mean": x_mean,
+        "x_2sigma": x_2sigma,
+        "y_mean": y_mean,
+        "y_2sigma": y_2sigma,
+    }
+
+
+def _fmt_stat_value(value):
+    if not np.isfinite(value):
+        return "NA"
+    if value == 0:
+        return "0"
+    a = abs(value)
+    if a < 1e-3 or a >= 1e3:
+        return f"{value:.2e}"
+    return f"{value:.3g}"
+
+
 
 
 def _log_marginal(ax, values, limits, color, horizontal=False):
@@ -2121,6 +2250,11 @@ def plot_combined_released_fluid_figure(good: pd.DataFrame, outdir: Path):
     hist_bin_n = FLUID_HIST_BINS * 10
     rng = np.random.default_rng(20261017)
 
+    # Quantitative annotations / output tables only.
+    # Simulation, filtering, bins, axes and layout remain unchanged.
+    density_core_stats = {}
+    ratio_medians = {}
+
     with plt.rc_context({"font.family": "Times New Roman", "font.size": 10,
                          "axes.linewidth": .8, "pdf.fonttype": 42,
                          "ps.fonttype": 42, "svg.fonttype": "none"}):
@@ -2157,63 +2291,220 @@ def plot_combined_released_fluid_figure(good: pd.DataFrame, outdir: Path):
                 ax.scatter(x, y, marker="s", s=6.0, color=rgb,
                            alpha=.58, linewidths=0, zorder=1,
                            rasterized=True)
-                _kde_levels_on_log_grid(ax, x, y, rgb, xlim, ylim, rng)
+                kde_info = _kde_levels_on_log_grid(
+                    ax, x, y, rgb, xlim, ylim, rng
+                )
+                core_stats = _density_core_statistics(x, y, kde_info)
+                density_core_stats[(skey, "F/Cl")] = core_stats
+
+                ax.text(
+                    .035, .035,
+                    "Core mean ± 2σ\n"
+                    f"I/Cl = {_fmt_stat_value(core_stats['x_mean'])} ± "
+                    f"{_fmt_stat_value(core_stats['x_2sigma'])}\n"
+                    f"F/Cl = {_fmt_stat_value(core_stats['y_mean'])} ± "
+                    f"{_fmt_stat_value(core_stats['y_2sigma'])}",
+                    transform=ax.transAxes,
+                    ha="left", va="bottom",
+                    fontsize=7.4,
+                    bbox=dict(
+                        boxstyle="round,pad=0.20",
+                        facecolor="white",
+                        edgecolor="none",
+                        alpha=.72,
+                    ),
+                    zorder=20,
+                )
             else:
                 ax.text(.5, .5, "No jointly net-loss realizations",
                         transform=ax.transAxes, ha="center", va="center",
                         fontsize=9)
 
-        # D panel: horizontal histogram -- x = Count, y = F/Cl ratio
+        # D panel: ONE outer frame, internally split into two x-axis ranges.
+        # The outer D panel is created exactly like H (same GridSpec cell and
+        # same box aspect), so D and H have identical external width/height.
         ax = fig.add_subplot(gs[0, 3])
         ax.set_box_aspect(2)
         ax.text(.015, .97, letters[3], transform=ax.transAxes,
-                ha="left", va="top", fontsize=13, fontweight="bold")
+                ha="left", va="top", fontsize=13, fontweight="bold", zorder=20)
         ax.text(.50, .973, "F/Cl", transform=ax.transAxes,
-                ha="center", va="top", fontsize=10.5)
+                ha="center", va="top", fontsize=10.5, zorder=20)
+
         limits = FLUID_PLOT_FYLIM
         edges = np.logspace(np.log10(limits[0]), np.log10(limits[1]), hist_bin_n + 1)
         log_bin_width = np.diff(np.log10(edges))[0]
         smooth_log = np.linspace(np.log10(limits[0]), np.log10(limits[1]), 450)
-        max_count = 0
-        max_curve = 0.0
-        for stage_idx, skey in enumerate(stage_order):
+
+        # Parent axis controls ONLY the common outer frame and common y axis.
+        ax.set_yscale("log")
+        ax.set_ylim(*limits)
+        ax.yaxis.set_major_locator(LogLocator(base=10))
+        ax.yaxis.set_major_formatter(LogFormatterMathtext())
+        ax.tick_params(axis="y", which="major", length=4.5, width=.75,
+                       direction="in", labelsize=10)
+        ax.tick_params(axis="y", which="minor", length=2.5, width=.65,
+                       direction="in")
+        ax.set_ylabel("F/Cl (mass ratio)", fontsize=11)
+        ax.set_xlabel("Count", fontsize=11, labelpad=20)
+        ax.set_xticks([])
+        ax.tick_params(axis="x", bottom=False, top=False, labelbottom=False)
+
+        # ------------------------------------------------------------------
+        # Internal split of D. These are NOT independent outer panels.
+        # They are transparent axes embedded inside the single D outer frame.
+        # ------------------------------------------------------------------
+        d_split = 0.30  # left 30% = Blueschists; right 70% = HP + UHP
+        ax_d_left = ax.inset_axes([0.0, 0.0, d_split, 1.0],
+                                  transform=ax.transAxes, zorder=3)
+        ax_d_right = ax.inset_axes([d_split, 0.0, 1.0 - d_split, 1.0],
+                                   transform=ax.transAxes, zorder=3)
+
+        for ax_part in (ax_d_left, ax_d_right):
+            ax_part.set_facecolor("none")
+            ax_part.set_yscale("log")
+            ax_part.set_ylim(*limits)
+            ax_part.set_yticks([])
+            ax_part.tick_params(axis="y", left=False, right=False,
+                                labelleft=False, labelright=False)
+            ax_part.tick_params(axis="x", which="both", direction="in",
+                                labelsize=9.5, length=3.5, width=.7)
+            # Keep the parent axis as the ONLY visible outer frame.
+            for spine in ax_part.spines.values():
+                spine.set_visible(False)
+
+        # ---- Left internal part: Blueschists only; SAME F/Cl points as panel A ----
+        blue_display = pd.to_numeric(
+            panels["AOC_BS"]["F/Cl"]["F/Cl"], errors="coerce"
+        ).to_numpy(float)
+        blue_display = blue_display[np.isfinite(blue_display) & (blue_display > 0)]
+        blue_display = blue_display[(blue_display >= limits[0]) &
+                                    (blue_display <= limits[1])]
+        blue_color = STAGE_COLORS["AOC_BS"]
+        blue_label = f"{stage_titles[0]} (n={len(blue_display):,})"
+        ratio_medians[("AOC_BS", "F/Cl")] = (
+            float(np.median(blue_display))
+            if len(blue_display) else np.nan
+        )
+
+        ax_d_left.hist(
+            blue_display, bins=edges, orientation="horizontal",
+            histtype="bar", color=blue_color, alpha=.30,
+            linewidth=0, label=blue_label, zorder=2
+        )
+        if len(blue_display) >= 6 and np.std(np.log10(blue_display)) > 1e-10:
+            sampled = (
+                rng.choice(blue_display, size=FLUID_KDE_MAX_POINTS, replace=False)
+                if len(blue_display) > FLUID_KDE_MAX_POINTS else blue_display
+            )
+            try:
+                kde = gaussian_kde(np.log10(sampled))
+                curve = kde(smooth_log) * len(blue_display) * log_bin_width
+                ax_d_left.plot(curve, 10**smooth_log, color=blue_color,
+                               lw=1.8, alpha=1.0, zorder=5)
+
+                med = ratio_medians[("AOC_BS", "F/Cl")]
+                peak_i = int(np.nanargmax(curve))
+                peak_x = float(curve[peak_i])
+                peak_y = float(10**smooth_log[peak_i])
+                ax_d_left.annotate(
+                    f"Median={_fmt_stat_value(med)}",
+                    xy=(min(peak_x, 2.85), peak_y),
+                    xytext=(3, 3),
+                    textcoords="offset points",
+                    color=blue_color,
+                    fontsize=7.4,
+                    ha="left", va="bottom",
+                    zorder=12,
+                )
+            except (ValueError, np.linalg.LinAlgError):
+                pass
+
+        # Requested count range for the Blueschist part.
+        ax_d_left.set_xlim(0, 3)
+        ax_d_left.set_xticks([0, 1, 2, 3])
+
+        # ---- Right internal part: HP and UHP eclogites; original D distributions ----
+        legend_handles = [Patch(facecolor=blue_color, alpha=.30,
+                                edgecolor="none")]
+        legend_labels = [blue_label]
+
+        for stage_idx, skey in enumerate(stage_order[1:], start=1):
             colname = f"{skey}_F_Cl_mass_ratio_conditional_joint_net_loss"
             values = pd.to_numeric(good[colname], errors="coerce").to_numpy(float)
             values = values[np.isfinite(values) & (values > 0)]
             display = values[(values >= limits[0]) & (values <= limits[1])]
             color = STAGE_COLORS[skey]
             label = f"{stage_titles[stage_idx]} (n={len(display):,})"
+            ratio_medians[(skey, "F/Cl")] = (
+                float(np.median(display))
+                if len(display) else np.nan
+            )
 
-            counts, _ = np.histogram(display, bins=edges)
-            if len(counts):
-                max_count = max(max_count, int(np.max(counts)))
-
-            ax.hist(display, bins=edges, orientation="horizontal",
-                    histtype="bar", color=color, alpha=.30,
-                    linewidth=0, label=label, zorder=2)
+            ax_d_right.hist(
+                display, bins=edges, orientation="horizontal",
+                histtype="bar", color=color, alpha=.30,
+                linewidth=0, label=label, zorder=2
+            )
 
             if len(display) >= 6 and np.std(np.log10(display)) > 1e-10:
-                sampled = (rng.choice(display, size=FLUID_KDE_MAX_POINTS, replace=False)
-                           if len(display) > FLUID_KDE_MAX_POINTS else display)
+                sampled = (
+                    rng.choice(display, size=FLUID_KDE_MAX_POINTS, replace=False)
+                    if len(display) > FLUID_KDE_MAX_POINTS else display
+                )
                 try:
                     kde = gaussian_kde(np.log10(sampled))
                     curve = kde(smooth_log) * len(display) * log_bin_width
-                    max_curve = max(max_curve, float(np.nanmax(curve)))
-                    ax.plot(curve, 10**smooth_log, color=color,
-                            lw=1.8, alpha=1.0, zorder=5)
+                    ax_d_right.plot(curve, 10**smooth_log, color=color,
+                                    lw=1.8, alpha=1.0, zorder=5)
+
+                    med = ratio_medians[(skey, "F/Cl")]
+                    peak_i = int(np.nanargmax(curve))
+                    peak_x = float(curve[peak_i])
+                    peak_y = float(10**smooth_log[peak_i])
+                    dy = 4 if stage_idx == 1 else -8
+                    ax_d_right.annotate(
+                        f"Median={_fmt_stat_value(med)}",
+                        xy=(min(peak_x, 590), peak_y),
+                        xytext=(4, dy),
+                        textcoords="offset points",
+                        color=color,
+                        fontsize=7.4,
+                        ha="left",
+                        va="bottom" if dy >= 0 else "top",
+                        zorder=12,
+                    )
                 except (ValueError, np.linalg.LinAlgError):
                     pass
 
-        ax.set_yscale("log")
-        ax.set_ylim(*limits)
-        xmax = max(float(max_count), max_curve)
-        ax.set_xlim(0, xmax * 1.08 if xmax > 0 else 1)
-        ax.yaxis.set_major_locator(LogLocator(base=10))
-        ax.yaxis.set_major_formatter(LogFormatterMathtext())
-        ax.tick_params(which="both", direction="in", labelsize=10)
-        ax.set_xlabel("Count", fontsize=11)
-        ax.set_ylabel("F/Cl (mass ratio)", fontsize=11)
-        ax.legend(loc="upper right", frameon=False, fontsize=8.6)
+            legend_handles.append(
+                Patch(facecolor=color, alpha=.30, edgecolor="none")
+            )
+            legend_labels.append(label)
+
+        # Requested count range for the two eclogite distributions.
+        ax_d_right.set_xlim(0, 600)
+        ax_d_right.set_xticks([0, 200, 400, 600])
+
+        # Internal separator only; the OUTER frame remains one continuous box.
+        ax.plot([d_split, d_split], [0, 1], transform=ax.transAxes,
+                color="black", linewidth=.8, zorder=15, clip_on=False)
+
+        # Small break marks on the shared outer top/bottom borders indicate that
+        # the internal x scale changes from 0-3 to 0-600 at this position.
+        dmark = .012
+        ax.plot((d_split - dmark, d_split + dmark),
+                (-dmark, +dmark), transform=ax.transAxes,
+                color="black", linewidth=.8, clip_on=False, zorder=16)
+        ax.plot((d_split - dmark, d_split + dmark),
+                (1 - dmark, 1 + dmark), transform=ax.transAxes,
+                color="black", linewidth=.8, clip_on=False, zorder=16)
+
+        # Single legend inside the one D outer frame.
+        ax_d_right.legend(
+            legend_handles, legend_labels,
+            loc="upper right", frameon=False, fontsize=8.4,
+            borderaxespad=.35
+        )
 
         for col, (skey, stage_title) in enumerate(zip(stage_order, stage_titles)):
             ax = fig.add_subplot(gs[1, col])
@@ -2241,7 +2532,30 @@ def plot_combined_released_fluid_figure(good: pd.DataFrame, outdir: Path):
                 ax.scatter(x, y, marker="s", s=6.0, color=rgb,
                            alpha=.58, linewidths=0, zorder=1,
                            rasterized=True)
-                _kde_levels_on_log_grid(ax, x, y, rgb, xlim, ylim, rng)
+                kde_info = _kde_levels_on_log_grid(
+                    ax, x, y, rgb, xlim, ylim, rng
+                )
+                core_stats = _density_core_statistics(x, y, kde_info)
+                density_core_stats[(skey, "Br/Cl")] = core_stats
+
+                ax.text(
+                    .035, .035,
+                    "Core mean ± 2σ\n"
+                    f"I/Cl = {_fmt_stat_value(core_stats['x_mean'])} ± "
+                    f"{_fmt_stat_value(core_stats['x_2sigma'])}\n"
+                    f"Br/Cl = {_fmt_stat_value(core_stats['y_mean'])} ± "
+                    f"{_fmt_stat_value(core_stats['y_2sigma'])}",
+                    transform=ax.transAxes,
+                    ha="left", va="bottom",
+                    fontsize=7.4,
+                    bbox=dict(
+                        boxstyle="round,pad=0.20",
+                        facecolor="white",
+                        edgecolor="none",
+                        alpha=.72,
+                    ),
+                    zorder=20,
+                )
             else:
                 ax.text(.5, .5, "No jointly net-loss realizations",
                         transform=ax.transAxes, ha="center", va="center",
@@ -2267,6 +2581,10 @@ def plot_combined_released_fluid_figure(good: pd.DataFrame, outdir: Path):
             display = values[(values >= limits[0]) & (values <= limits[1])]
             color = STAGE_COLORS[skey]
             label = f"{stage_titles[stage_idx]} (n={len(display):,})"
+            ratio_medians[(skey, "Br/Cl")] = (
+                float(np.median(display))
+                if len(display) else np.nan
+            )
 
             counts, _ = np.histogram(display, bins=edges)
             if len(counts):
@@ -2285,6 +2603,24 @@ def plot_combined_released_fluid_figure(good: pd.DataFrame, outdir: Path):
                     max_curve = max(max_curve, float(np.nanmax(curve)))
                     ax.plot(curve, 10**smooth_log, color=color,
                             lw=1.8, alpha=1.0, zorder=5)
+
+                    med = ratio_medians[(skey, "Br/Cl")]
+                    peak_i = int(np.nanargmax(curve))
+                    peak_x = float(curve[peak_i])
+                    peak_y = float(10**smooth_log[peak_i])
+                    dy_map = {0: 5, 1: -8, 2: 5}
+                    dy = dy_map.get(stage_idx, 4)
+                    ax.annotate(
+                        f"Median={_fmt_stat_value(med)}",
+                        xy=(peak_x, peak_y),
+                        xytext=(4, dy),
+                        textcoords="offset points",
+                        color=color,
+                        fontsize=7.4,
+                        ha="left",
+                        va="bottom" if dy >= 0 else "top",
+                        zorder=12,
+                    )
                 except (ValueError, np.linalg.LinAlgError):
                     pass
 
@@ -2298,6 +2634,110 @@ def plot_combined_released_fluid_figure(good: pd.DataFrame, outdir: Path):
         ax.set_xlabel("Count", fontsize=11)
         ax.set_ylabel("Br/Cl (mass ratio)", fontsize=11)
         ax.legend(loc="upper right", frameon=False, fontsize=8.6)
+
+        # --------------------------------------------------------------
+        # Numeric outputs corresponding exactly to the plotted distributions.
+        # --------------------------------------------------------------
+
+        # I/Cl median uses the pairwise joint-net-loss I/Cl distribution.
+        for skey in stage_order:
+            icol = f"{skey}_I_Cl_mass_ratio_conditional_joint_net_loss"
+            ivals = pd.to_numeric(
+                good[icol], errors="coerce"
+            ).to_numpy(float)
+            ivals = ivals[np.isfinite(ivals) & (ivals > 0)]
+            ivals = ivals[
+                (ivals >= FLUID_PLOT_XLIM[0]) &
+                (ivals <= FLUID_PLOT_XLIM[1])
+            ]
+            ratio_medians[(skey, "I/Cl")] = (
+                float(np.median(ivals))
+                if len(ivals) else np.nan
+            )
+
+        # Detailed statistics for all six density panels.
+        core_rows = []
+        for stage_idx, skey in enumerate(stage_order):
+            for ratio_name, panel_letter in [
+                ("F/Cl", letters[stage_idx]),
+                ("Br/Cl", letters[4 + stage_idx]),
+            ]:
+                st = density_core_stats.get((skey, ratio_name), {})
+                core_rows.append({
+                    "stage": stage_titles[stage_idx],
+                    "panel": panel_letter,
+                    "panel_ratio": f"{ratio_name} vs I/Cl",
+                    "有效数据数量n": st.get("N_total", 0),
+                    "最密集核心区数据数量n_core": st.get("N_core", 0),
+                    "I/Cl密度分布最密集区域平均值":
+                        st.get("x_mean", np.nan),
+                    "I/Cl密度分布最密集区域2σ正负值":
+                        st.get("x_2sigma", np.nan),
+                    f"{ratio_name}比值密度分布最密集区域平均值":
+                        st.get("y_mean", np.nan),
+                    f"{ratio_name}比值密度分布最密集区域2σ正负值":
+                        st.get("y_2sigma", np.nan),
+                    "核心区定义":
+                        "KDE density >= 0.83 × maximum KDE density",
+                })
+
+        core_detail_df = pd.DataFrame(core_rows)
+        core_detail_df.to_csv(
+            outdir / "six_panel_KDE_densest_core_statistics.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+        core_detail_df.to_excel(
+            outdir / "six_panel_KDE_densest_core_statistics.xlsx",
+            index=False,
+        )
+
+        # Final table requested by the user.
+        # Because only one n and one I/Cl core value are requested per stage,
+        # n and the summary I/Cl core statistics are taken from A-C
+        # (F/Cl-I/Cl panels). E-G I/Cl core statistics remain in the
+        # detailed six-panel table above.
+        summary_rows = []
+        for stage_idx, skey in enumerate(stage_order):
+            fcore = density_core_stats.get((skey, "F/Cl"), {})
+            brcore = density_core_stats.get((skey, "Br/Cl"), {})
+
+            summary_rows.append({
+                "stage": stage_titles[stage_idx],
+                "有效数据数量n": fcore.get("N_total", 0),
+                "F/Cl比值中位数":
+                    ratio_medians.get((skey, "F/Cl"), np.nan),
+                "F/Cl比值密度分布最密集区域平均值":
+                    fcore.get("y_mean", np.nan),
+                "F/Cl比值密度分布最密集区域2σ正负值":
+                    fcore.get("y_2sigma", np.nan),
+                "Br/Cl比值中位数":
+                    ratio_medians.get((skey, "Br/Cl"), np.nan),
+                "Br/Cl比值密度分布最密集区域平均值":
+                    brcore.get("y_mean", np.nan),
+                "Br/Cl比值密度分布最密集区域2σ正负值":
+                    brcore.get("y_2sigma", np.nan),
+                "I/Cl比值中位数":
+                    ratio_medians.get((skey, "I/Cl"), np.nan),
+                "I/Cl比值密度分布最密集区域平均值":
+                    fcore.get("x_mean", np.nan),
+                "I/Cl比值密度分布最密集区域2σ正负值":
+                    fcore.get("x_2sigma", np.nan),
+            })
+
+        halogen_summary_df = pd.DataFrame(summary_rows)
+        halogen_summary_df.to_csv(
+            outdir / "halogen_ratio_median_and_densest_core_summary.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+        halogen_summary_df.to_excel(
+            outdir / "halogen_ratio_median_and_densest_core_summary.xlsx",
+            index=False,
+        )
+
+        print("\nHalogen-ratio median and densest-core summary:")
+        print(halogen_summary_df.to_string(index=False))
 
         for extension in ("svg", "pdf"):
             fig.savefig(outdir / f"Fig_fluid_combined_2row4col.{extension}",
