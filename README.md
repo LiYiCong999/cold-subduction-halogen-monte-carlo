@@ -54,7 +54,7 @@ The original source-file checksums document the initial uploads and do not repre
 
 1. **Author:** Yi-Cong Li. Software citation metadata is provided in [`CITATION.cff`](CITATION.cff).
 2. **Source code and input data:** The three Python scripts and their corresponding CSV datasets are available in the `scripts/` and `data/` directories.
-3. **Release and DOI:** Version `v1.0.2` has been archived on Zenodo with the version-specific DOI [10.5281/zenodo.23831719](https://doi.org/10.5281/zenodo.23831719). This release includes the revised open-system halogen dehydration and mélange mixing scripts, as well as the updated `halogen_data.csv` input dataset. The previous version `v1.0.1` remains archived at [10.5281/zenodo.23280101](https://doi.org/10.5281/zenodo.23280101).
+3. **Release and DOI:** Version `v1.0.3` has been archived on Zenodo with the version-specific DOI [10.5281/zenodo.24001068](https://doi.org/10.5281/zenodo.24001068). This release updates `scripts/02_open_system_halogen_dehydration.py`. The other two Python scripts and all three input CSV datasets remain unchanged from `v1.0.2`. The previous version `v1.0.2` remains archived at [10.5281/zenodo.23831719](https://doi.org/10.5281/zenodo.23831719).
 
 4. **Licenses:** The three Python scripts in [`scripts/`](scripts/) are distributed under the [MIT License](scripts/LICENSE). The three input CSV datasets in [`data/`](data/) are distributed under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](data/LICENSE), except for third-party materials subject to separate licensing terms. The software and dataset licenses are declared separately in the Zenodo record.
 
